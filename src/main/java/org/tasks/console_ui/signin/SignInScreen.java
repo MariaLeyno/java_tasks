@@ -25,9 +25,4 @@ public class SignInScreen extends FillParametersScreen<SignInAction> {
             default -> false;
         };
     }
-
-    @Override
-    protected boolean goNext(SignInAction action, String line) {
-        return true;
-    }
 }

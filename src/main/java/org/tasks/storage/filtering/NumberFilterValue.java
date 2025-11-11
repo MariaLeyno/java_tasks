@@ -1,6 +1,7 @@
 package org.tasks.storage.filtering;
 
 import lombok.Getter;
+import org.tasks.model.FieldType;
 
 public class NumberFilterValue extends FilterValue {
     @Getter
@@ -21,5 +22,10 @@ public class NumberFilterValue extends FilterValue {
             return type.compareTo(o.getType());
         }
         return value.compareTo((Double) o.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
     }
 }

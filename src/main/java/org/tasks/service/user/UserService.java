@@ -7,6 +7,7 @@ import org.tasks.service.user.errors.*;
 import org.tasks.storage.StorageFactory;
 import org.tasks.storage.UserStorage;
 
+import java.io.IOException;
 import java.util.Map;
 
 import static org.tasks.service.user.UserConstants.*;
@@ -65,8 +66,12 @@ public class UserService {
         }
     }
 
-    private void saveUser(User user) {
-        userStorage.addNewDataObject(user);
+    private void saveUser(User user) throws UserNotSavedException {
+        try {
+            userStorage.addNewDataObject(user);
+        } catch (IOException ex) {
+            throw new UserNotSavedException(ex);
+        }
     }
 
     private User findUserByLogin(String login) {

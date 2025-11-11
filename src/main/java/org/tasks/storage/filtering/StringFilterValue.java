@@ -1,6 +1,7 @@
 package org.tasks.storage.filtering;
 
 import lombok.Getter;
+import org.tasks.model.FieldType;
 
 public class StringFilterValue extends FilterValue {
     @Getter
@@ -18,5 +19,10 @@ public class StringFilterValue extends FilterValue {
             return type.compareTo(o.getType());
         }
         return value.compareTo((String) o.getValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return value.hashCode();
     }
 }

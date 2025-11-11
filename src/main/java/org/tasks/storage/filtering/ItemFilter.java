@@ -2,7 +2,9 @@ package org.tasks.storage.filtering;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.tasks.model.FieldType;
 import org.tasks.model.Item;
+import org.tasks.model.ItemField;
 
 import java.util.*;
 import java.util.regex.Matcher;

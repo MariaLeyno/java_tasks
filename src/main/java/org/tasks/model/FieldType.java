@@ -1,4 +1,4 @@
-package org.tasks.storage.filtering;
+package org.tasks.model;
 
 import lombok.Getter;
 

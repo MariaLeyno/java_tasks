@@ -3,6 +3,7 @@ package org.tasks.console_ui;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public abstract class FillParametersScreen<T extends ActionParameter> extends ConsoleScreen<T> {
@@ -13,7 +14,6 @@ public abstract class FillParametersScreen<T extends ActionParameter> extends Co
     }
 
     protected abstract boolean isValid(T action, String line);
-    protected abstract boolean goNext(T action, String line);
 
     @Override
     public void interact() {
@@ -41,7 +41,20 @@ public abstract class FillParametersScreen<T extends ActionParameter> extends Co
                 .collect(Collectors.toMap(entry -> entry.getKey().toString(), Map.Entry::getValue));
     }
 
+
+    protected boolean goNext(T action, String line) {
+        return true;
+    }
+
     protected void addParameterValue(T action, String value) {
         inputParameters.put(action, value);
+    }
+
+    protected boolean isEmpty(String value) {
+        return value == null || value.isEmpty();
+    }
+
+    protected boolean matches(String value, String pattern) {
+        return Pattern.compile(pattern).matcher(value).matches();
     }
 }

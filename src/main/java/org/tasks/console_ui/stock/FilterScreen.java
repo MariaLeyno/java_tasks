@@ -8,13 +8,13 @@ import org.tasks.console_ui.FillParametersScreen;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
-import java.util.regex.Pattern;
 
 public class FilterScreen extends FillParametersScreen<FilterAction> {
     private static final String HEADER_MESSAGE = "For each field you can add as many filters as you want.%n"
             + "Leave the field value empty if you don't want to add any more.%n"
             + "Filters for one field are combined by OR-operator.%n"
             + "Filters for different fields are combined by AND-operator.%n%n";
+    private String additionalHeader;
     @Getter
     private final Multimap<String, String> multiParameters = ArrayListMultimap.create();
 
@@ -22,10 +22,18 @@ public class FilterScreen extends FillParametersScreen<FilterAction> {
         super(scanner);
     }
 
+    public FilterScreen(Scanner scanner, String additionalHeader) {
+        this(scanner);
+        this.additionalHeader = additionalHeader;
+    }
+
     @Override
     protected void printHeader() {
         super.printHeader();
         System.out.printf(HEADER_MESSAGE);
+        if (!isEmpty(additionalHeader)) {
+            out.printf(additionalHeader);
+        }
     }
 
     @Override
@@ -37,7 +45,7 @@ public class FilterScreen extends FillParametersScreen<FilterAction> {
     protected boolean isValid(FilterAction action, String line) {
         String pattern = action.getRestriction();
         if (!isEmpty(line) && pattern != null) {
-            return Pattern.compile(pattern).matcher(line).matches();
+            return matches(line, pattern);
         }
         return true;
     }
@@ -52,9 +60,5 @@ public class FilterScreen extends FillParametersScreen<FilterAction> {
         if (!isEmpty(value)) {
             multiParameters.put(action.name(), value);
         }
-    }
-
-    private boolean isEmpty(String value) {
-        return value == null || value.isEmpty();
     }
 }

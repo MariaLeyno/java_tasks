@@ -13,8 +13,8 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class Storage<T extends DataObject> {
     private static final String NEW_LINE = "\r\n";
@@ -30,21 +30,46 @@ public abstract class Storage<T extends DataObject> {
         collectDataFromFile();
     }
 
-    public void addNewDataObject(T dataObject) {
-        try {
-            String line = getDataObjectAsString(dataObject);
-            addLineToFile(line, fileName);
-            dataMap.put(dataObject.getPrimary(), dataObject);
-        } catch (IOException e) {
-            System.out.println("Unable to store " + dataClass + " object");
+    public int deleteDataObjets(Set<String> dataObjectIds) throws IOException {
+        Set<T> dataObjects = findDataObjectsByPrimary(dataObjectIds);
+        dataObjects.forEach(DataObject::setUnactive);
+
+        List<String> strObjects = new ArrayList<>(dataObjects.size());
+        for (T dataObject : dataObjects) {
+            strObjects.add(getDataObjectAsString(dataObject));
         }
+        addLinesToFile(strObjects, fileName);
+
+        return (int) dataObjects.stream()
+                .map(dataObject -> dataMap.remove(dataObject.getPrimary(), dataObject))
+                .filter(res -> res).count();
+    }
+
+    public int saveDataObjects(Set<T> dataObjects) throws IOException {
+        List<String> strObjects = new ArrayList<>(dataObjects.size());
+        for (T dataObject : dataObjects) {
+            strObjects.add(getDataObjectAsString(dataObject));
+        }
+        addLinesToFile(strObjects, fileName);
+
+        dataObjects.forEach(dataObject -> dataMap.putIfAbsent(dataObject.getPrimary(), dataObject));
+        return strObjects.size();
+    }
+
+    public void addNewDataObject(T dataObject) throws IOException {
+        saveDataObjects(Set.of(dataObject));
     }
 
     public T findDataObjectByPrimary(String primary) {
         return dataMap.get(primary);
     }
 
+    public Set<T> findDataObjectsByPrimary(Set<String> primaryKeys) {
+        return primaryKeys.stream().map(primary -> dataMap.get(primary)).collect(Collectors.toSet());
+    }
+
     protected int collectDataFromFile() {
+        Map<String, T> tmpMap = new HashMap<>();
         try (ReversedLinesFileReader reverseReader = getReverseReader(fileName)) {
             while (true) {
                 String line = reverseReader.readLine();
@@ -55,14 +80,19 @@ public abstract class Storage<T extends DataObject> {
                 T dataObject = getDataObject(line);
                 if (dataObject != null) {
                     String primary = dataObject.getPrimary();
-                    if (!dataMap.containsKey(primary)) {
-                        dataMap.put(primary, dataObject);
+                    if (!tmpMap.containsKey(primary)) {
+                        tmpMap.put(primary, dataObject);
                     }
                 }
             }
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
         }
+
+        tmpMap.entrySet().stream()
+                .filter(entry -> entry.getValue().isActive())
+                .forEach(entry -> dataMap.put(entry.getKey(), entry.getValue()));
+
         return dataMap.size();
     }
 
@@ -81,9 +111,9 @@ public abstract class Storage<T extends DataObject> {
         return null;
     }
 
-    private void addLineToFile(String newData, String fileName) throws IOException {
+    private void addLinesToFile(List<String> newData, String fileName) throws IOException {
         File file = getFile(fileName);
-        byte[] bytes = (NEW_LINE + newData).getBytes();
+        byte[] bytes = (NEW_LINE + String.join(NEW_LINE, newData)).getBytes();
         Files.write(Paths.get(file.getPath()), bytes, StandardOpenOption.APPEND);
     }
 

@@ -1,21 +1,25 @@
 package org.tasks;
 
 import com.google.common.collect.Multimap;
+import org.tasks.console_ui.common.YesNoScreen;
+import org.tasks.console_ui.common.YesNoValue;
 import org.tasks.console_ui.signin.SignInScreen;
 import org.tasks.console_ui.signup.SignUpScreen;
-import org.tasks.console_ui.stock.FilterScreen;
-import org.tasks.console_ui.stock.StockAction;
-import org.tasks.console_ui.stock.StockScreen;
+import org.tasks.console_ui.stock.*;
 import org.tasks.console_ui.welcome.UserAction;
 import org.tasks.console_ui.welcome.WelcomeScreen;
 import org.tasks.service.stock.StockService;
+import org.tasks.service.stock.errors.ItemsNotDeletedException;
 import org.tasks.service.user.UserService;
 
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
 
+import static org.tasks.console_ui.MarketConstants.*;
+
 public class Market {
+
     public void work() {
         Scanner scanner = new Scanner(System.in);
         UserAccess userAccess = null;
@@ -27,14 +31,51 @@ public class Market {
             } else {
                 StockAction stockAction = showStockScreen(scanner);
                 if (stockAction == StockAction.SELECT) {
-                    Multimap<String, String> filterMap = showFilterScreen(scanner);
-                    Set<?> items = processItemData(stockAction, filterMap);
-                    System.out.printf("%n%nSearch result: %d items%n", items.size());
-                    items.forEach(System.out::println);
-                } else {
-                    System.out.println("Sorry, the section is in progress");
+                    selectItemsFlow(scanner);
+                } else if (stockAction == StockAction.ADD) {
+                    addItemFlow(scanner);
+                } else if (stockAction == StockAction.UPDATE) {
+                    updateItemsFlow(scanner);
+                } else if (stockAction == StockAction.DELETE) {
+                    deleteItemsFlow(scanner);
                 }
             }
+        }
+    }
+
+    private void selectItemsFlow(Scanner scanner) {
+        Multimap<String, String> filterMap = showFilterScreen(scanner, FILTERS_HEADER_FOR_SELECT);
+        Set<?> items = selectItems(filterMap);
+        System.out.printf(SEARCH_RESULT, items.size());
+        items.forEach(System.out::println);
+    }
+
+    private void addItemFlow(Scanner scanner) {
+        Map<String, String> newItemParameters = showAddScreen(scanner);
+        addNewItem(newItemParameters);
+        System.out.println(NEW_ITEM_SAVED);
+    }
+
+    private void updateItemsFlow(Scanner scanner) {
+        Multimap<String, String> filterMap = showFilterScreen(scanner, FILTERS_HEADER_FOR_UPDATE);
+        Set<String> itemIds = selectItemIds(filterMap);
+        String updateQuestion = String.format(UPDATE_QUESTION, itemIds.size());
+        YesNoValue answer = showYesNoScreen(updateQuestion, scanner);
+        if (answer == YesNoValue.YES) {
+            Map<String, String> parametersToUpdate = showUpdateScreen(scanner);
+            int updatedCount = updateItems(itemIds, parametersToUpdate);
+            System.out.printf(ITEMS_UPDATED, updatedCount);
+        }
+    }
+
+    private void deleteItemsFlow(Scanner scanner) {
+        Multimap<String, String> filterMap = showFilterScreen(scanner, FILTERS_HEADER_FOR_DELETE);
+        Set<String> itemIds = selectItemIds(filterMap);
+        String deleteQuestion = String.format(DELETE_QUESTION, itemIds.size());
+        YesNoValue answer = showYesNoScreen(deleteQuestion, scanner);
+        if (answer == YesNoValue.YES) {
+            int deletedCount = deleteItems(itemIds);
+            System.out.printf(ITEMS_DELETED, deletedCount);
         }
     }
 
@@ -44,10 +85,21 @@ public class Market {
         return stockScreen.getChoice();
     }
 
-    private Multimap<String, String> showFilterScreen(Scanner scanner) {
-        FilterScreen filterScreen = new FilterScreen(scanner);
+    private Multimap<String, String> showFilterScreen(Scanner scanner, String additionalHeader) {
+        FilterScreen filterScreen = new FilterScreen(scanner, additionalHeader);
         filterScreen.interact();
         return filterScreen.getMultiParameters();
+    }
+    private Map<String, String> showAddScreen(Scanner scanner) {
+        AddScreen addScreen = new AddScreen(scanner);
+        addScreen.interact();
+        return addScreen.getParameters();
+    }
+
+    private Map<String, String> showUpdateScreen(Scanner scanner) {
+        UpdateScreen updateScreen = new UpdateScreen(scanner);
+        updateScreen.interact();
+        return updateScreen.getParameters();
     }
 
     private UserAction showWelcomeScreen(Scanner scanner) {
@@ -74,6 +126,12 @@ public class Market {
         return processUserData(userAction, userParameters);
     }
 
+    private YesNoValue showYesNoScreen(String question, Scanner scanner) {
+        YesNoScreen yesNoScreen = new YesNoScreen(question, scanner);
+        yesNoScreen.interact();
+        return yesNoScreen.getAnswer();
+    }
+
     private UserAccess processUserData(UserAction userAction, Map<String, String> userParameters) {
         UserService userService = new UserService();
         try {
@@ -88,8 +146,42 @@ public class Market {
         return null;
     }
 
-    private Set<?> processItemData(StockAction stockAction, Multimap<String, String> itemData) {
+    private Set<?> selectItems(Multimap<String, String> itemData) {
         StockService stockService = new StockService();
         return stockService.findItems(itemData);
+    }
+
+    private Set<String> selectItemIds(Multimap<String, String> itemData) {
+        StockService stockService = new StockService();
+        return stockService.findItemIds(itemData);
+    }
+
+    private void addNewItem(Map<String, String> parameters) {
+        StockService stockService = new StockService();
+        try {
+            stockService.addNewItem(parameters);
+        } catch (ItemException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private int updateItems(Set<String> itemIds, Map<String, String> parametersToUpdate) {
+        StockService stockService = new StockService();
+        try {
+            return stockService.updateItems(itemIds, parametersToUpdate);
+        } catch (ItemException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return 0;
+    }
+
+    private int deleteItems(Set<String> itemIds) {
+        StockService stockService = new StockService();
+        try {
+            return stockService.deleteItems(itemIds);
+        } catch (ItemsNotDeletedException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return 0;
     }
 }

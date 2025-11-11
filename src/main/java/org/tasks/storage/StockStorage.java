@@ -3,8 +3,10 @@ package org.tasks.storage;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 import org.tasks.model.Item;
+import org.tasks.model.ItemField;
 import org.tasks.storage.filtering.*;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -12,13 +14,43 @@ public class StockStorage extends Storage<Item> {
     private static final String INFO = "%d items were loaded from the file";
     private static final String ITEMS_FILE = "stock/items";
 
-    private Map<ItemField, Multimap<String, Item>> indexMap;
+    private FilteringManager filteringManager = new FilteringManager();
+    private Map<ItemField, Multimap<String, String>> indexMap;
     private Map<Integer, ItemFilter> filterCache = new HashMap<>();
 
     StockStorage() {
         super(ITEMS_FILE, Item.class);
 
         createIndexes();
+    }
+
+    @Override
+    public int deleteDataObjets(Set<String> itemIds) throws IOException {
+        int count = super.deleteDataObjets(itemIds);
+
+        deleteFromIndexes(itemIds);
+        clearCache();
+
+        return count;
+    }
+
+    @Override
+    public int saveDataObjects(Set<Item> items) throws IOException {
+        int count = super.saveDataObjects(items);
+
+        updateIndexes(items);
+        clearCache();
+
+        return count;
+    }
+
+    @Override
+    public void addNewDataObject(Item item) throws IOException {
+        saveDataObjects(Set.of(item));
+    }
+
+    public Set<String> findItemIdsByParameters(Multimap<String, String> parameters) {
+        return findItemsByParameters(parameters).stream().map(Item::getId).map(UUID::toString).collect(Collectors.toSet());
     }
 
     public Set<Item> findItemsByParameters(Multimap<String, String> parameters) {
@@ -32,38 +64,15 @@ public class StockStorage extends Storage<Item> {
                 ItemField field = filter.getField();
                 Set<String> strValues = filter.getStringValues();
                 if (indexMap.containsKey(field)) {
-                    Multimap<String, Item> fieldIndex = indexMap.get(field);
+                    Multimap<String, String> fieldIndex = indexMap.get(field);
                     filteredItems = strValues.stream()
                             .flatMap(val -> fieldIndex.get(val).stream())
+                            .map(primary -> dataMap.get(primary))
                             .collect(Collectors.toSet());
                 } else {
-                    filteredItems = foundItems.stream().filter(item -> {
-                        Object value = FilterMapper.getFieldValue(item, field);
-                        if (value == null) {
-                            return false;
-                        }
-                        if (field.getType() == FieldType.STRING) {
-                            return strValues.contains(value.toString());
-                        } else if (field.getType() == FieldType.NUMBER) {
-                            boolean valueMaps = false;
-                            for (NumberFilterValue numValue : filter.getNumberValues()) {
-                                Double number = numValue.getValue();
-                                Double itemNumber = (Double) value;
-                                valueMaps = switch (numValue.getOperation()) {
-                                    case EQ -> itemNumber.equals(number);
-                                    case NE -> !itemNumber.equals(number);
-                                    case GT -> itemNumber > number;
-                                    case LT -> itemNumber < number;
-                                    default -> false;
-                                };
-                                if (valueMaps) {
-                                    break;
-                                }
-                            }
-                            return valueMaps;
-                        }
-                        return false;
-                    }).collect(Collectors.toSet());
+                    filteredItems = dataMap.values().stream()
+                            .filter(item -> filteringManager.itemMeetsFilter(item, filter))
+                            .collect(Collectors.toSet());
                 }
                 filter.setItems(filteredItems);
             }
@@ -71,7 +80,7 @@ public class StockStorage extends Storage<Item> {
             foundItems = filteredItems.stream().filter(foundItems::contains).collect(Collectors.toSet());
         }
 
-        updateCache(filters);
+        addToCache(filters);
 
         return foundItems;
     }
@@ -92,20 +101,54 @@ public class StockStorage extends Storage<Item> {
         return filters;
     }
 
-    private void updateCache(Set<ItemFilter> filters) {
+    private void clearCache() {
+        filterCache.clear();
+    }
+
+    private void addToCache(Set<ItemFilter> filters) {
         filters.stream()
                 .filter(ItemFilter::containsFilteredItems)
                 .filter(filter -> !filterCache.containsKey(filter.hashCode()))
                 .forEach(filter -> filterCache.put(filter.hashCode(), filter));
     }
 
+    private void deleteFromIndexes(Set<String> items) {
+        Multimap<String, String> brandIndex = indexMap.get(ItemField.BRAND);
+        Multimap<String, String> categoryIndex = indexMap.get(ItemField.CATEGORY);
+        items.forEach(primary -> {
+            deleteFromIndex(brandIndex, primary);
+            deleteFromIndex(categoryIndex, primary);
+        });
+    }
+
+    private void deleteFromIndex(Multimap<String, String> index, String primary) {
+        index.entries().stream()
+                .filter(entry -> primary.equals(entry.getValue()))
+                .map(Map.Entry::getKey).toList().forEach(oldValue -> index.remove(oldValue, primary));
+    }
+
+    private void updateIndexes(Set<Item> items) {
+        for (Item item : items) {
+            String primary = item.getPrimary();
+            updateIndex(indexMap.get(ItemField.BRAND), primary, item.getBrand());
+            updateIndex(indexMap.get(ItemField.CATEGORY), primary, item.getCategory());
+        }
+    }
+
+    private void updateIndex(Multimap<String, String> index, String primary, String value) {
+        if(!index.containsEntry(value, primary)) {
+            deleteFromIndex(index, primary);
+            index.put(value, primary);
+        }
+    }
+
     private void createIndexes() {
-        Multimap<String, Item> brandIndex = TreeMultimap.create();
-        Multimap<String, Item> categoryIndex = TreeMultimap.create();
+        Multimap<String, String> brandIndex = TreeMultimap.create();
+        Multimap<String, String> categoryIndex = TreeMultimap.create();
 
         for (Item item : dataMap.values()) {
-            brandIndex.put(item.getBrand(), item);
-            categoryIndex.put(item.getCategory(), item);
+            brandIndex.put(item.getBrand(), item.getPrimary());
+            categoryIndex.put(item.getCategory(), item.getPrimary());
         }
 
         indexMap = new HashMap<>();
