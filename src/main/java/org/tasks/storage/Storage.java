@@ -32,7 +32,7 @@ public abstract class Storage<T extends DataObject> {
 
     public int deleteDataObjets(Set<String> dataObjectIds) throws IOException {
         Set<T> dataObjects = findDataObjectsByPrimary(dataObjectIds);
-        dataObjects.forEach(DataObject::setUnactive);
+        dataObjects.forEach(DataObject::setInactive);
 
         List<String> strObjects = new ArrayList<>(dataObjects.size());
         for (T dataObject : dataObjects) {
