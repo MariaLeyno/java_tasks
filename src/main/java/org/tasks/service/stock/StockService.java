@@ -111,21 +111,16 @@ public class StockService {
             }
 
             switch (field) {
-                case NAME:
-                    item.setName(value);
-                    break;
-                case CATEGORY:
-                    item.setCategory(value);
-                    break;
-                case BRAND:
-                    item.setBrand(value);
-                    break;
-                case PRICE:
+                case NAME -> item.setName(value);
+                case CATEGORY -> item.setCategory(value);
+                case BRAND -> item.setBrand(value);
+                case PRICE -> {
                     if (STR_NULL.equals(value)) {
                         item.setPrice(null);
                     } else {
                         item.setPrice(Double.valueOf(value));
                     }
+                }
             }
         }
     }
@@ -145,17 +140,10 @@ public class StockService {
             String value = parameters.get(field.name());
             if (!isEmpty(value)) {
                 switch (field) {
-                    case NAME:
-                        name = value;
-                        break;
-                    case CATEGORY:
-                        category = value;
-                        break;
-                    case BRAND:
-                        brand = value;
-                        break;
-                    case PRICE:
-                        price = Double.valueOf(value);
+                    case NAME -> name = value;
+                    case CATEGORY -> category = value;
+                    case BRAND -> brand = value;
+                    case PRICE -> price = Double.valueOf(value);
                 }
             }
         }
