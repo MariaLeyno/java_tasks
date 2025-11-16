@@ -9,12 +9,9 @@ import org.tasks.console_ui.stock.*;
 import org.tasks.console_ui.welcome.UserAction;
 import org.tasks.console_ui.welcome.WelcomeScreen;
 import org.tasks.service.stock.StockService;
-import org.tasks.service.stock.errors.ItemsNotDeletedException;
 import org.tasks.service.user.UserService;
 
-import java.util.Map;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 
 import static org.tasks.console_ui.MarketConstants.*;
 
@@ -59,7 +56,7 @@ public class Market {
      */
     private void selectItemsFlow(Scanner scanner) {
         Multimap<String, String> filterMap = showFilterScreen(scanner, FILTERS_HEADER_FOR_SELECT);
-        Set<?> items = selectItems(filterMap);
+        List<?> items = selectItems(filterMap);
         System.out.printf(SEARCH_RESULT, items.size());
         items.forEach(System.out::println);
     }
@@ -212,8 +209,8 @@ public class Market {
      * @return user account rights
      */
     private UserAccess processUserData(UserAction userAction, Map<String, String> userParameters) {
-        UserService userService = new UserService();
         try {
+            UserService userService = new UserService();
             if (userAction == UserAction.SIGN_UP) {
                 userService.registerNewUser(userParameters);
             } else if (userAction == UserAction.SIGN_IN) {
@@ -230,9 +227,14 @@ public class Market {
      * @param itemData item parameters filters
      * @return a collection of items
      */
-    private Set<?> selectItems(Multimap<String, String> itemData) {
-        StockService stockService = new StockService();
-        return stockService.findItems(itemData);
+    private List<?> selectItems(Multimap<String, String> itemData) {
+        try {
+            StockService stockService = new StockService();
+            return stockService.findItems(itemData);
+        } catch (ItemException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return Collections.emptyList();
     }
 
     /**
@@ -241,8 +243,13 @@ public class Market {
      * @return a collection of items identifiers
      */
     private Set<String> selectItemIds(Multimap<String, String> itemData) {
-        StockService stockService = new StockService();
-        return stockService.findItemIds(itemData);
+        try {
+            StockService stockService = new StockService();
+            return stockService.findItemIds(itemData);
+        } catch (ItemException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return Collections.emptySet();
     }
 
     /**
@@ -250,8 +257,8 @@ public class Market {
      * @param parameters item parameters values
      */
     private void addNewItem(Map<String, String> parameters) {
-        StockService stockService = new StockService();
         try {
+            StockService stockService = new StockService();
             stockService.addNewItem(parameters);
         } catch (ItemException ex) {
             System.out.println(ex.getMessage());
@@ -265,8 +272,8 @@ public class Market {
      * @return a number of updated items
      */
     private int updateItems(Set<String> itemIds, Map<String, String> parametersToUpdate) {
-        StockService stockService = new StockService();
         try {
+            StockService stockService = new StockService();
             return stockService.updateItems(itemIds, parametersToUpdate);
         } catch (ItemException ex) {
             System.out.println(ex.getMessage());
@@ -280,10 +287,10 @@ public class Market {
      * @return a number of deleted items
      */
     private int deleteItems(Set<String> itemIds) {
-        StockService stockService = new StockService();
         try {
+            StockService stockService = new StockService();
             return stockService.deleteItems(itemIds);
-        } catch (ItemsNotDeletedException ex) {
+        } catch (ItemException ex) {
             System.out.println(ex.getMessage());
         }
         return 0;

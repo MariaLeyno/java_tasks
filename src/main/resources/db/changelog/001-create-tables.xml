@@ -1,0 +1,49 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.5.xsd"
+        logicalFilePath="db/changelog.xml">
+    <changeSet id="001-create-tables" author="leynom">
+        <createSequence sequenceName="user_account_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="user_accounts">
+            <column type="BIGINT" name="id">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="login">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="password">
+                <constraints nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="access"/>
+        </createTable>
+        <createIndex tableName="user_accounts" indexName="user_accounts_login">
+            <column name="login"/>
+        </createIndex>
+        <createSequence sequenceName="catalog_items_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="catalog_items">
+            <column type="BIGINT" name="id">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="name">
+                <constraints nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="category">
+                <constraints nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="brand">
+                <constraints nullable="false"/>
+            </column>
+            <column type="DOUBLE" name="price"/>
+        </createTable>
+        <createIndex tableName="catalog_items" indexName="catalog_items_category">
+            <column name="category"/>
+        </createIndex>
+        <createIndex tableName="catalog_items" indexName="catalog_items_brand">
+            <column name="brand"/>
+        </createIndex>
+        <createIndex tableName="catalog_items" indexName="catalog_items_price">
+            <column name="price"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

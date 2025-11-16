@@ -1,6 +1,5 @@
 package org.tasks.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,37 +12,19 @@ import org.tasks.UserAccess;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"active"})
+@ToString
 public class User implements DataObject {
 
+    /** Account unique identifier */
+    private Integer id;
     /** Account name */
     private String login;
     /** Account password */
     private String password;
     /** Account rights */
     private UserAccess access;
-    /** Account state */
-    private boolean active = true;
 
     public User(String login, String password, UserAccess access) {
-        this(login, password, access, true);
-    }
-
-    /**
-     * Method returns account name as unique identifier for user account.
-     * @return name as account unique identifier
-     */
-    @Override
-    @JsonIgnore
-    public String getPrimary() {
-        return login;
-    }
-
-    /**
-     * Method changes user account state to inactive.
-     */
-    @Override
-    public void setInactive() {
-        active = false;
+        this(null, login, password, access);
     }
 }

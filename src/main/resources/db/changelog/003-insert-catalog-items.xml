@@ -1,0 +1,29 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.5.xsd"
+        logicalFilePath="db/changelog.xml">
+    <changeSet id="002-insert-catalog-items" author="leynom">
+        <insert tableName="catalog_items">
+            <column name="id" valueComputed="nextval('catalog_items_seq')"/>
+            <column name="name">Blue dress</column>
+            <column name="category">Dress</column>
+            <column name="brand">Zolla</column>
+            <column name="price">101.89</column>
+        </insert>
+        <insert tableName="catalog_items">
+            <column name="id" valueComputed="nextval('catalog_items_seq')"/>
+            <column name="name">Wide-brimmed hat</column>
+            <column name="category">Hat</column>
+            <column name="brand">HM</column>
+            <column name="price">15.5</column>
+        </insert>
+        <insert tableName="catalog_items">
+            <column name="id" valueComputed="nextval('catalog_items_seq')"/>
+            <column name="name">Cocktail dress</column>
+            <column name="category">Dress</column>
+            <column name="brand">HM</column>
+            <column name="price">250</column>
+        </insert>
+    </changeSet>
+</databaseChangeLog>
