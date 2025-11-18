@@ -82,12 +82,16 @@ public class Market {
     private void updateItemsFlow(Scanner scanner) {
         Multimap<String, String> filterMap = showFilterScreen(scanner, FILTERS_HEADER_FOR_UPDATE);
         Set<String> itemIds = selectItemIds(filterMap);
-        String updateQuestion = String.format(UPDATE_QUESTION, itemIds.size());
-        YesNoValue answer = showYesNoScreen(updateQuestion, scanner);
-        if (answer == YesNoValue.YES) {
-            Map<String, String> parametersToUpdate = showUpdateScreen(scanner);
-            int updatedCount = updateItems(itemIds, parametersToUpdate);
-            System.out.printf(ITEMS_UPDATED, updatedCount);
+        if (itemIds.isEmpty()) {
+            System.out.println("No items were found to update");
+        } else {
+            String updateQuestion = String.format(UPDATE_QUESTION, itemIds.size());
+            YesNoValue answer = showYesNoScreen(updateQuestion, scanner);
+            if (answer == YesNoValue.YES) {
+                Map<String, String> parametersToUpdate = showUpdateScreen(scanner);
+                int updatedCount = updateItems(itemIds, parametersToUpdate);
+                System.out.printf(ITEMS_UPDATED, updatedCount);
+            }
         }
     }
 
@@ -100,11 +104,15 @@ public class Market {
     private void deleteItemsFlow(Scanner scanner) {
         Multimap<String, String> filterMap = showFilterScreen(scanner, FILTERS_HEADER_FOR_DELETE);
         Set<String> itemIds = selectItemIds(filterMap);
-        String deleteQuestion = String.format(DELETE_QUESTION, itemIds.size());
-        YesNoValue answer = showYesNoScreen(deleteQuestion, scanner);
-        if (answer == YesNoValue.YES) {
-            int deletedCount = deleteItems(itemIds);
-            System.out.printf(ITEMS_DELETED, deletedCount);
+        if (itemIds.isEmpty()) {
+            System.out.println("No items were found to delete");
+        } else {
+            String deleteQuestion = String.format(DELETE_QUESTION, itemIds.size());
+            YesNoValue answer = showYesNoScreen(deleteQuestion, scanner);
+            if (answer == YesNoValue.YES) {
+                int deletedCount = deleteItems(itemIds);
+                System.out.printf(ITEMS_DELETED, deletedCount);
+            }
         }
     }
 

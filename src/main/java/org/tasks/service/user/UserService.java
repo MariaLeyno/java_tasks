@@ -135,7 +135,7 @@ public class UserService {
             List<User> found = userRepository.findUsersByParameters(loginFilter);
             return found == null || found.isEmpty() ? null : found.getFirst();
         } catch (DatabaseException ex) {
-            throw new UserNotFoundException(ex.getMessage());
+            throw new UserNotFoundException(ex);
         }
     }
 }

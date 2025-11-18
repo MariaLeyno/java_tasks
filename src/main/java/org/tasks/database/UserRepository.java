@@ -33,6 +33,10 @@ public class UserRepository extends Repository<UserField> {
     }
 
     public int addNewUser(User user) throws DatabaseException {
+        if (user == null) {
+            throw new QueryBuildingException("User object to store should not be null");
+        }
+
         Map<UserField, String> userParameters = new TreeMap<>();
         userParameters.put(UserField.LOGIN, user.getLogin());
         userParameters.put(UserField.PASSWORD, user.getPassword());

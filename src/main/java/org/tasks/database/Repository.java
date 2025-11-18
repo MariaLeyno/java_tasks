@@ -66,16 +66,26 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
     }
 
     protected int deleteDataObjects(Set<String> ids) throws DbManagerException {
-        String strPrimaryFilter = getStrPrimaryFilters(ids);
-        String query = deleteQuery + strPrimaryFilter;
+        String query = deleteQuery;
+
+        if (ids != null && !ids.isEmpty()) {
+            query = query + getStrPrimaryFilters(ids);
+        }
+
         return dbManager.executeWithCount(query);
     }
 
     protected int updateDataObjects(Set<String> ids, Map<E, String> parametersToUpdate) throws DatabaseException {
         String strFieldsToUpdate = getStrFieldsToUpdate(parametersToUpdate);
-        String strPrimaryFilter = getStrPrimaryFilters(ids);
+        if (strFieldsToUpdate == null || strFieldsToUpdate.isEmpty()) {
+            throw new QueryBuildingException("Parameters to update are absent or invalid");
+        }
+        String query = updateQuery + strFieldsToUpdate;
 
-        String query = updateQuery + strFieldsToUpdate + strPrimaryFilter;
+        if (ids != null && !ids.isEmpty()) {
+            query = query + getStrPrimaryFilters(ids);
+        }
+
         return dbManager.executeWithCount(query);
     }
 
@@ -97,6 +107,9 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
     }
 
     private String getStrFieldsToUpdate(Map<E, String> parameters) {
+        if (parameters == null || parameters.isEmpty()) {
+            return null;
+        }
         return parameters.entrySet().stream().map(entry -> {
             E field = entry.getKey();
             return switch (field.getType()) {
@@ -104,7 +117,7 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
                 case NUMBER -> field.name() + EQUAL + entry.getValue();
                 case null, default -> null;
             };
-        }).collect(Collectors.joining(COMMA));
+        }).filter(Objects::nonNull).collect(Collectors.joining(COMMA));
     }
 
     private String getStrPrimaryFilters(Set<String> ids) {
@@ -124,10 +137,12 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
 
     private Set<FieldWithValues<E>> getFieldsWithValues(Multimap<String, String> parameters) {
         Set<FieldWithValues<E>> filters = new TreeSet<>();
-        for(Map.Entry<String, Collection<String>> entry : parameters.asMap().entrySet()) {
-            E field = fields.get(entry.getKey());
-            FieldWithValues<E> filter = new FieldWithValues<>(field, entry.getValue());
-            filters.add(filter);
+        if (parameters != null && !parameters.isEmpty()) {
+            for (Map.Entry<String, Collection<String>> entry : parameters.asMap().entrySet()) {
+                E field = fields.get(entry.getKey());
+                FieldWithValues<E> filter = new FieldWithValues<>(field, entry.getValue());
+                filters.add(filter);
+            }
         }
         return filters;
     }
