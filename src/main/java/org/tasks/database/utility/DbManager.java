@@ -15,7 +15,17 @@ import java.util.*;
 
 import static org.tasks.database.utility.DbParameters.*;
 
+/**
+ * DbManager manages connections to PostgreSql database. As a singleton there is the only DBManager through the application.
+ * While starting, it loads connection parameters (i.e. database host and port) from Application properties files and
+ * calls Liquibase to execute its changelog scripts.
+ * DbManager offers several methods to execute queries at the database. In case of SQL or connectivity errors it throws
+ * {@link DbManagerException}.
+ */
 public final class DbManager {
+    private static String POSTGRES_PROPERTIES_FILE = "postgresql.env";
+    private static String APPLICATION_PROPERTIES_FILE = "application.properties";
+
     private static final String URL_PATTERN = "jdbc:postgresql://%s:%s/%s";
     private static final String CREATE_SCHEMA_QUERY = "create schema if not exists %s";
 
@@ -29,6 +39,13 @@ public final class DbManager {
     private static String LIQUIBASE_SCHEMA;
     private static String LIQUIBASE_CHANGELOG;
 
+    /**
+     * Method creates a singleton instance for DbManager and returns it for all requests.
+     * In case of any errors {@link DbManagerException} is thrown and DbManager instance creation will be postponed
+     * for the next request.
+     * @return DbManager singleton instance
+     * @throws DbManagerException - if connectivity, files reading or data migration errors occur
+     */
     public static DbManager getInstance() throws DbManagerException {
         if (INSTANCE == null) {
             INSTANCE = instantiateDbManager();
@@ -36,6 +53,14 @@ public final class DbManager {
         return INSTANCE;
     }
 
+    /**
+     * Method executes SQL query at the database and returns a result as a list of rows with a map of columns and values.
+     * @param query SQL query to execute
+     * @param fields a set of fields to extract from a result
+     * @return SQL query result as a list of rows with a map of columns and values
+     * @param <T> Data Object fields
+     * @throws DbManagerException - if connectivity or SQL errors occur
+     */
     public <T extends DataObjectField> List<Map<T, String>> executeWithResult(String query, Set<T> fields)
             throws DbManagerException {
         try (Connection connection = getConnection(); Statement statement = connection.createStatement()) {
@@ -54,6 +79,14 @@ public final class DbManager {
         }
     }
 
+    /**
+     * Methods injects string or number parameters into SQL query and executes it at the database.
+     * @param query SQL query to execute
+     * @param parameters map of data object fields and their values
+     * @return a number of affected rows
+     * @param <T> Data Object fields
+     * @throws DbManagerException - if parameters injecting fails or connectivity or SQL errors occur
+     */
     public <T extends DataObjectField> int executeWithParameters(String query, Map<T, String> parameters)
             throws DbManagerException {
         try (Connection connection = getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
@@ -78,11 +111,17 @@ public final class DbManager {
                 }
             }
             return statement.executeUpdate();
-        } catch (SQLException ex) {
+        } catch (SQLException | IllegalArgumentException ex) {
             throw new DbManagerException(ex);
         }
     }
 
+    /**
+     * Method executes SQL query at the database.
+     * @param query SQL query to execute
+     * @return a number of affected rows
+     * @throws DbManagerException - if connectivity or SQL errors occur
+     */
     public int executeWithCount(String query) throws DbManagerException {
         try (Connection connection = getConnection(); Statement statement = connection.createStatement()) {
             return statement.executeUpdate(query);
@@ -91,6 +130,10 @@ public final class DbManager {
         }
     }
 
+    /**
+     * Method calls Liquibase data migration to separate database schemas if specified.
+     * @throws DbManagerException - if connectivity or data migration errors occur
+     */
     private void processLiquibaseScripts() throws DbManagerException {
         try (JdbcConnection jdbcConnection = new JdbcConnection(getConnection())) {
             Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(jdbcConnection);
@@ -104,6 +147,12 @@ public final class DbManager {
         }
     }
 
+    /**
+     * Method creates a database schema for entity tables and a separate schema for Liquibase service tables
+     * if the schemas are specified at properties files and not already created at the database.
+     * @param schema database schema to create
+     * @throws DbManagerException - if connectivity or SQL errors occur
+     */
     private void createSchemaIfNotExist(String schema) throws DbManagerException {
         if (schema == null || schema.isEmpty()) {
             return;
@@ -117,13 +166,24 @@ public final class DbManager {
         }
     }
 
+    /**
+     * Method creates a connection to the database.
+     * @return connection to the database
+     * @throws SQLException - if connectivity errors occur
+     */
     private Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER_NAME, PASSWORD);
     }
 
+    /**
+     * Method loads application properties from specified properties files and configures the database connection
+     * parameters. Then it creates the only instance of DbManager and calls Liquibase data migration to the database.
+     * @return DbManager instance
+     * @throws DbManagerException - if files reading, connectivity or data migration errors occur
+     */
     private static DbManager instantiateDbManager() throws DbManagerException {
-        try (FileInputStream postgresEnv = new FileInputStream("postgresql.env");
-                FileInputStream appProperties = new FileInputStream("application.properties")) {
+        try (FileInputStream postgresEnv = new FileInputStream(POSTGRES_PROPERTIES_FILE);
+                FileInputStream appProperties = new FileInputStream(APPLICATION_PROPERTIES_FILE)) {
             Properties properties = new Properties();
             properties.load(postgresEnv);
             properties.load(appProperties);
@@ -151,10 +211,16 @@ public final class DbManager {
         return dbManager;
     }
 
+    /**
+     * Method stores application properties loaded from files.
+     * @param properties application properties
+     */
     private static void extractParametersValues(Properties properties) {
         for (DbParameters param : DbParameters.values()) {
             String value = properties.getProperty(param.name());
-            param.setValue(value);
+            if (value != null) {
+                param.setValue(value);
+            }
         }
     }
 }
