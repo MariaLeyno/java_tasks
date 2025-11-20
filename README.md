@@ -15,14 +15,11 @@ In shop catalog users may:
 3. Update existing items.
 4. Delete existing items.
 
-To speed up filtration the items catalog has in-memory indexes. The last requests are stored at the in-memory cache.
-
-Between the application runs items catalog and accounts data are stored into files.
+All entity objects are stored at PostreSQL database. Table indexes provide fast access to entities. Liquibase manages data migration and table structure at the database.
 
 Users may close the application just to type 'exit' at the console.
 
 Known issues:
 1. User authentication is supported, developing of user authorization is in progress.
 2. User passwords should be hashed for storing and hidden for printing.
-3. Jar-application doesn't support data storing between the application runs.
-4. The system just has expansion points for showing audit and other system information. 
+3. The system just has expansion points for showing audit and other system information. 
