@@ -39,7 +39,7 @@ public class UserServiceTest {
                              return switch (login) {
                                  case "existing_user" -> List.of(new User("existing_user", "password", UserAccess.CHANGE));
                                  case "unlucky_user" -> throw new DbManagerException(new RuntimeException());
-                                 case null, default -> Collections.emptyList();
+                                 default -> Collections.emptyList();
                              };
                          });
         }))) {

@@ -115,7 +115,7 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
             return switch (field.getType()) {
                 case STRING -> field.name() + EQUAL + QUOTE + entry.getValue() + QUOTE;
                 case NUMBER -> field.name() + EQUAL + entry.getValue();
-                case null, default -> null;
+                default -> null;
             };
         }).filter(Objects::nonNull).collect(Collectors.joining(COMMA));
     }

@@ -201,11 +201,11 @@ public class UserRepositoryTest {
         List<User> foundUsers = userRepository.findUsersByParameters(parameters);
 
         assertThat(foundUsers).hasSize(2);
-        User firstUser = foundUsers.getFirst();
+        User firstUser = foundUsers.get(0);
         assertThat(firstUser.getLogin()).isEqualTo("user1");
         assertThat(firstUser.getPassword()).isEqualTo("password1");
         assertThat(firstUser.getAccess()).isEqualTo(READ);
-        User secondUser = foundUsers.getLast();
+        User secondUser = foundUsers.get(1);
         assertThat(secondUser.getLogin()).isEqualTo("user2");
         assertThat(secondUser.getPassword()).isEqualTo("password2");
         assertThat(secondUser.getAccess()).isEqualTo(READ);
@@ -229,11 +229,11 @@ public class UserRepositoryTest {
         List<User> foundUsers = userRepository.findUsersByParameters(parameters);
 
         assertThat(foundUsers).hasSize(2);
-        User firstUser = foundUsers.getFirst();
+        User firstUser = foundUsers.get(0);
         assertThat(firstUser.getLogin()).isEqualTo("user1");
         assertThat(firstUser.getPassword()).isEqualTo("password1");
         assertThat(firstUser.getAccess()).isEqualTo(READ);
-        User secondUser = foundUsers.getLast();
+        User secondUser = foundUsers.get(1);
         assertThat(secondUser.getLogin()).isEqualTo("user2");
         assertThat(secondUser.getPassword()).isEqualTo("password2");
         assertThat(secondUser.getAccess()).isEqualTo(CHANGE);
