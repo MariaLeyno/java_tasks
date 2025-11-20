@@ -133,7 +133,7 @@ public class UserService {
         loginFilter.put(UserField.LOGIN.name(), login);
         try {
             List<User> found = userRepository.findUsersByParameters(loginFilter);
-            return found == null || found.isEmpty() ? null : found.getFirst();
+            return found == null || found.isEmpty() ? null : found.get(0);
         } catch (DatabaseException ex) {
             throw new UserNotFoundException(ex);
         }

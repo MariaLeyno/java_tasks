@@ -45,7 +45,7 @@ public class FieldWithValues<T extends Enum<T> & DataObjectField> implements Com
             case STRING -> values.stream()
                             .map(val -> fieldName + EQUAL + QUOTE + val.getValue().toString() + QUOTE)
                             .collect(Collectors.joining(OR));
-            case null, default -> null;
+            default -> null;
         };
     }
 

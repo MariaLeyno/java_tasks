@@ -50,11 +50,11 @@ public class DbManagerTest {
         List<Map<ItemField, String>> result = dbManager.executeWithResult(query, fields);
 
         assertThat(result).hasSize(2);
-        Map<ItemField, String> firstRow = result.getFirst();
+        Map<ItemField, String> firstRow = result.get(0);
         assertThat(firstRow).hasSize(5)
                 .containsEntry(CATEGORY, "Dress").containsEntry(NAME, "Blue dress")
                 .containsEntry(PRICE, "101.89").containsEntry(ID, "1").containsEntry(BRAND, "Zolla");
-        Map<ItemField, String> lastRow = result.getLast();
+        Map<ItemField, String> lastRow = result.get(1);
         assertThat(lastRow).hasSize(5)
                 .containsEntry(CATEGORY, "Dress").containsEntry(NAME, "Cocktail dress")
                 .containsEntry(PRICE, "250").containsEntry(ID, "3").containsEntry(BRAND, "HM");
