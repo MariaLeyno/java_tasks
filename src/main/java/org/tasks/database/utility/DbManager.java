@@ -6,10 +6,9 @@ import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
+import org.postgresql.Driver;
 import org.tasks.model.DataObjectField;
 
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
@@ -23,9 +22,6 @@ import static org.tasks.database.utility.DbParameters.*;
  * {@link DbManagerException}.
  */
 public final class DbManager {
-    private static String POSTGRES_PROPERTIES_FILE = "postgresql.env";
-    private static String APPLICATION_PROPERTIES_FILE = "application.properties";
-
     private static final String URL_PATTERN = "jdbc:postgresql://%s:%s/%s";
     private static final String CREATE_SCHEMA_QUERY = "create schema if not exists %s";
 
@@ -172,6 +168,7 @@ public final class DbManager {
      * @throws SQLException - if connectivity errors occur
      */
     private Connection getConnection() throws SQLException {
+        DriverManager.registerDriver(new Driver());
         return DriverManager.getConnection(URL, USER_NAME, PASSWORD);
     }
 
@@ -182,26 +179,16 @@ public final class DbManager {
      * @throws DbManagerException - if files reading, connectivity or data migration errors occur
      */
     private static DbManager instantiateDbManager() throws DbManagerException {
-        try (FileInputStream postgresEnv = new FileInputStream(POSTGRES_PROPERTIES_FILE);
-                FileInputStream appProperties = new FileInputStream(APPLICATION_PROPERTIES_FILE)) {
-            Properties properties = new Properties();
-            properties.load(postgresEnv);
-            properties.load(appProperties);
-            extractParametersValues(properties);
+        String dbName = POSTGRES_DB.getValue();
+        String dbHost = DB_HOST.getValue();
+        String dbPort = DB_PORT.getValue();
+        URL = String.format(URL_PATTERN, dbHost, dbPort, dbName);
+        USER_NAME = POSTGRES_USER.getValue();
+        PASSWORD = POSTGRES_PASSWORD.getValue();
 
-            String dbName = POSTGRES_DB.getValue();
-            String dbHost = DB_HOST.getValue();
-            String dbPort = DB_PORT.getValue();
-            URL = String.format(URL_PATTERN, dbHost, dbPort, dbName);
-            USER_NAME = POSTGRES_USER.getValue();
-            PASSWORD = POSTGRES_PASSWORD.getValue();
-
-            DEFAULT_SCHEMA = DEFAULT_DB_SCHEMA.getValue();
-            LIQUIBASE_SCHEMA = LIQUIBASE_DB_SCHEMA.getValue();
-            LIQUIBASE_CHANGELOG = LIQUIBASE_CHANGELOG_FILE.getValue();
-        } catch (IOException ex) {
-            throw new DbManagerException(ex);
-        }
+        DEFAULT_SCHEMA = DEFAULT_DB_SCHEMA.getValue();
+        LIQUIBASE_SCHEMA = LIQUIBASE_DB_SCHEMA.getValue();
+        LIQUIBASE_CHANGELOG = LIQUIBASE_CHANGELOG_FILE.getValue();
 
         DbManager dbManager = new DbManager();
         dbManager.createSchemaIfNotExist(LIQUIBASE_SCHEMA);
@@ -209,18 +196,5 @@ public final class DbManager {
         dbManager.processLiquibaseScripts();
 
         return dbManager;
-    }
-
-    /**
-     * Method stores application properties loaded from files.
-     * @param properties application properties
-     */
-    private static void extractParametersValues(Properties properties) {
-        for (DbParameters param : DbParameters.values()) {
-            String value = properties.getProperty(param.name());
-            if (value != null) {
-                param.setValue(value);
-            }
-        }
     }
 }

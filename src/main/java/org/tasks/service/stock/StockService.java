@@ -7,6 +7,8 @@ import org.tasks.database.ItemRepository;
 import org.tasks.model.Item;
 import org.tasks.model.ItemField;
 import org.tasks.service.stock.errors.*;
+import org.tasks.web.dto.ItemDTO;
+import org.tasks.web.dto.ItemMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,8 @@ public class StockService {
 
     /** Storage for catalog items */
     private final ItemRepository itemRepository;
+    /** Service to map HTTP data transfer object and database entity */
+    private final ItemMapper itemMapper;
 
     public StockService() throws StockServiceIsNotInstantiatedException {
         try {
@@ -32,6 +36,7 @@ public class StockService {
         } catch (DatabaseException ex) {
             throw new StockServiceIsNotInstantiatedException(ex);
         }
+        this.itemMapper = ItemMapper.INSTANCE;
     }
 
     /**
@@ -39,9 +44,10 @@ public class StockService {
      * @param parameters items parameters to filter
      * @return collection of catalog items
      */
-    public List<Item> findItems(Multimap<String, String> parameters) throws ItemsNotFoundException {
+    public List<ItemDTO> findItems(Multimap<String, String> parameters) throws ItemsNotFoundException {
         try {
-            return itemRepository.findItemsByParameters(parameters);
+            List<Item> items = itemRepository.findItemsByParameters(parameters);
+            return itemMapper.fromEntitiesToDtoList(items);
         } catch (DatabaseException ex) {
             throw new ItemsNotFoundException(ex);
         }
@@ -95,20 +101,75 @@ public class StockService {
             }
             parametersToUpdate.put(field, value);
         }
+
+        return updateItemsInDatabase(itemIds, parametersToUpdate);
+    }
+
+    /**
+     * Method requests the internal storage to update catalog items with specified identifiers
+     * with new parameters values. If parameter value is empty, method skips it.
+     * If parameter value is '<null>', method sets null-value to the parameter (if the field allows nulls).
+     * @param itemIds collection of items identifiers
+     * @param itemParameters new parameters values
+     * @return count of updated catalog items
+     * @throws ItemsNotSavedException - if updating failed
+     */
+    public int updateItems(Set<String> itemIds, ItemDTO itemParameters) throws ItemsNotSavedException {
+        Map<ItemField, String> parametersToUpdate = new TreeMap<>();
+        if (!isEmpty(itemParameters.getName())) {
+            parametersToUpdate.put(ItemField.NAME, itemParameters.getName());
+        }
+        if (!isEmpty(itemParameters.getCategory())) {
+            parametersToUpdate.put(ItemField.CATEGORY, itemParameters.getCategory());
+        }
+        if (!isEmpty(itemParameters.getBrand())) {
+            parametersToUpdate.put(ItemField.BRAND, itemParameters.getBrand());
+        }
+        String price = itemParameters.getPrice();
+        if (!isEmpty(price)) {
+            if (STR_NULL.equals(price)) {
+                price = null;
+            }
+            parametersToUpdate.put(ItemField.PRICE, price);
+        }
+
+        return updateItemsInDatabase(itemIds, parametersToUpdate);
+    }
+
+    private int updateItemsInDatabase(Set<String> ids, Map<ItemField, String> parametersToUpdate) throws ItemsNotSavedException {
         try {
-            return itemRepository.updateItems(itemIds, parametersToUpdate);
+            return itemRepository.updateItems(ids, parametersToUpdate);
         } catch (DatabaseException ex) {
             throw new ItemsNotSavedException(ex);
         }
     }
 
     /**
-     * Method requests the internal storage to store a new catalog item with specified parameters values.
+     * Method creates a new catalog item with specified parameters values and stores it to the database.
      * @param parameters collection of item parameters values
      * @throws ItemException - if item parameters are invalid or storing failed
      */
     public void addNewItem(Map<String, String> parameters) throws ItemException {
         Item newItem = getNewItem(parameters);
+        storeNewItemToDatabase(newItem);
+    }
+
+    /**
+     * Method creates a new catalog item with specified parameters values and stores it to the database.
+     * @param itemDTO data transfer object with item parameter values
+     * @throws ItemException - if item parameters are invalid or storing failed
+     */
+    public void addNewItem(ItemDTO itemDTO) throws ItemException {
+        Item newItem = itemMapper.fromDtoToEntity(itemDTO);
+        storeNewItemToDatabase(newItem);
+    }
+
+    /**
+     * Method requests the internal storage to store a new catalog item.
+     * @param newItem new catalog item
+     * @throws ItemsNotSavedException - if item storing failed
+     */
+    private void storeNewItemToDatabase(Item newItem) throws ItemsNotSavedException {
         try {
             itemRepository.addNewItem(newItem);
         } catch (DatabaseException ex) {

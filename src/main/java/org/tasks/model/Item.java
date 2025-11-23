@@ -3,7 +3,7 @@ package org.tasks.model;
 import lombok.*;
 
 /**
- * Data object to store parameters values and state for catalog item.
+ * Data object to store parameters values and state for catalog item in database.
  */
 @Getter
 @NoArgsConstructor

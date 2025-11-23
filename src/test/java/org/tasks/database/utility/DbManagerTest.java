@@ -1,6 +1,5 @@
 package org.tasks.database.utility;
 
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -18,8 +17,6 @@ import static org.tasks.model.ItemField.*;
 
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class DbManagerTest {
-    private static final String EMPTY_FILE = "src/test/resources/empty.properties";
-
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest");
 
     private static DbManager dbManager;
@@ -34,9 +31,6 @@ public class DbManagerTest {
         DbParameters.POSTGRES_USER.setValue(postgres.getUsername());
         DbParameters.POSTGRES_PASSWORD.setValue(postgres.getPassword());
         DbParameters.LIQUIBASE_CHANGELOG_FILE.setValue("db/changelog/changelog.xml");
-
-        FieldUtils.writeDeclaredStaticField(DbManager.class, "POSTGRES_PROPERTIES_FILE",  EMPTY_FILE, true);
-        FieldUtils.writeDeclaredStaticField(DbManager.class, "APPLICATION_PROPERTIES_FILE", EMPTY_FILE, true);
 
         dbManager = DbManager.getInstance();
         assertNotNull(dbManager);
