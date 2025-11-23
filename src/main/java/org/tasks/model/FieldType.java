@@ -7,9 +7,9 @@ public enum FieldType {
     NUMBER("^(EQ|NE|LT|GT)\\s?(\\d+(\\.\\d+)?)$");
 
     @Getter
-    private final String pattern;
+    private final String filterPattern;
 
-    FieldType(String pattern) {
-        this.pattern = pattern;
+    FieldType(String filterPattern) {
+        this.filterPattern = filterPattern;
     }
 }

@@ -1,4 +1,4 @@
-package org.tasks.storage.filtering;
+package org.tasks.database.filtering;
 
 import org.tasks.model.FieldType;
 

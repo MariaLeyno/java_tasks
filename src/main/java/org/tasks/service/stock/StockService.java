@@ -1,18 +1,17 @@
 package org.tasks.service.stock;
 
 import com.google.common.collect.Multimap;
+import org.tasks.DatabaseException;
 import org.tasks.ItemException;
+import org.tasks.database.ItemRepository;
 import org.tasks.model.Item;
 import org.tasks.model.ItemField;
-import org.tasks.service.stock.errors.ItemsNotSavedException;
-import org.tasks.service.stock.errors.ItemParametersNotValidException;
-import org.tasks.service.stock.errors.ItemsNotDeletedException;
-import org.tasks.storage.StockStorage;
-import org.tasks.storage.StorageFactory;
+import org.tasks.service.stock.errors.*;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * StockStorage provides business logic for managing catalog items. It validates data from UI and requests
@@ -25,10 +24,14 @@ public class StockService {
     private static final String STR_NULL = "<null>";
 
     /** Storage for catalog items */
-    private final StockStorage stockStorage;
+    private final ItemRepository itemRepository;
 
-    public StockService() {
-        this.stockStorage = StorageFactory.getStockStorage();
+    public StockService() throws StockServiceIsNotInstantiatedException {
+        try {
+            this.itemRepository = new ItemRepository();
+        } catch (DatabaseException ex) {
+            throw new StockServiceIsNotInstantiatedException(ex);
+        }
     }
 
     /**
@@ -36,8 +39,12 @@ public class StockService {
      * @param parameters items parameters to filter
      * @return collection of catalog items
      */
-    public Set<Item> findItems(Multimap<String, String> parameters) {
-        return stockStorage.findItemsByParameters(parameters);
+    public List<Item> findItems(Multimap<String, String> parameters) throws ItemsNotFoundException {
+        try {
+            return itemRepository.findItemsByParameters(parameters);
+        } catch (DatabaseException ex) {
+            throw new ItemsNotFoundException(ex);
+        }
     }
 
     /**
@@ -45,8 +52,12 @@ public class StockService {
      * @param parameters items parameters to filter
      * @return collection of catalog items identifiers
      */
-    public Set<String> findItemIds(Multimap<String, String> parameters) {
-        return stockStorage.findItemIdsByParameters(parameters);
+    public Set<String> findItemIds(Multimap<String, String> parameters) throws ItemsNotFoundException {
+        try {
+            return itemRepository.findItemIdsByParameters(parameters);
+        } catch (DatabaseException ex) {
+            throw new ItemsNotFoundException(ex);
+        }
     }
 
     /**
@@ -57,28 +68,36 @@ public class StockService {
      */
     public int deleteItems(Set<String> itemIds) throws ItemsNotDeletedException {
         try {
-            return stockStorage.deleteDataObjets(itemIds);
-        } catch (IOException ex) {
+            return itemRepository.deleteItems(itemIds);
+        } catch (DatabaseException ex) {
             throw new ItemsNotDeletedException(ex);
         }
     }
 
     /**
      * Method requests the internal storage to update catalog items with specified identifiers
-     * with new parameters values.
+     * with new parameters values. If parameter value is empty, method skips it.
+     * If parameter value is '<null>', method sets null-value to the parameter (if the field allows nulls).
      * @param itemIds collection of items identifiers
-     * @param parametersToUpdate collection of new parameters values
+     * @param parameters collection of new parameters values
      * @return count of updated catalog items
      * @throws ItemsNotSavedException - if updating failed
      */
-    public int updateItems(Set<String> itemIds, Map<String, String> parametersToUpdate) throws ItemsNotSavedException {
-        Set<Item> items = stockStorage.findDataObjectsByPrimary(itemIds);
-        for (Item item : items) {
-            updateItemWithParameters(item, parametersToUpdate);
+    public int updateItems(Set<String> itemIds, Map<String, String> parameters) throws ItemsNotSavedException {
+        Map<ItemField, String> parametersToUpdate = new TreeMap<>();
+        for (ItemField field : ItemField.values()) {
+            String value = parameters.get(field.name());
+            if (isEmpty(value)) {
+                continue;
+            }
+            if (field == ItemField.PRICE && STR_NULL.equals(value)) {
+                value = null;
+            }
+            parametersToUpdate.put(field, value);
         }
         try {
-            return stockStorage.saveDataObjects(items);
-        } catch (IOException ex) {
+            return itemRepository.updateItems(itemIds, parametersToUpdate);
+        } catch (DatabaseException ex) {
             throw new ItemsNotSavedException(ex);
         }
     }
@@ -91,42 +110,9 @@ public class StockService {
     public void addNewItem(Map<String, String> parameters) throws ItemException {
         Item newItem = getNewItem(parameters);
         try {
-            stockStorage.addNewDataObject(newItem);
-        } catch (IOException ex) {
+            itemRepository.addNewItem(newItem);
+        } catch (DatabaseException ex) {
             throw new ItemsNotSavedException(ex);
-        }
-    }
-
-    /**
-     * Method updates catalog items parameters with new values. If parameter value is empty, method skips it.
-     * If parameter value is '<null>', method sets null-value to the parameter (if the field allows nulls).
-     * @param item catalog item data object
-     * @param parameters collection of new values for item's parameters
-     */
-    private void updateItemWithParameters(Item item, Map<String, String> parameters) {
-        for (ItemField field : ItemField.values()) {
-            String value = parameters.get(field.name());
-            if (isEmpty(value)) {
-                continue;
-            }
-
-            switch (field) {
-                case NAME:
-                    item.setName(value);
-                    break;
-                case CATEGORY:
-                    item.setCategory(value);
-                    break;
-                case BRAND:
-                    item.setBrand(value);
-                    break;
-                case PRICE:
-                    if (STR_NULL.equals(value)) {
-                        item.setPrice(null);
-                    } else {
-                        item.setPrice(Double.valueOf(value));
-                    }
-            }
         }
     }
 
@@ -145,17 +131,10 @@ public class StockService {
             String value = parameters.get(field.name());
             if (!isEmpty(value)) {
                 switch (field) {
-                    case NAME:
-                        name = value;
-                        break;
-                    case CATEGORY:
-                        category = value;
-                        break;
-                    case BRAND:
-                        brand = value;
-                        break;
-                    case PRICE:
-                        price = Double.valueOf(value);
+                    case NAME -> name = value;
+                    case CATEGORY -> category = value;
+                    case BRAND -> brand = value;
+                    case PRICE -> price = Double.valueOf(value);
                 }
             }
         }

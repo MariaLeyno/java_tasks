@@ -8,4 +8,8 @@ public class UserNotFoundException extends UserException {
     public UserNotFoundException(String user) {
         super(String.format(message, user));
     }
+
+    public UserNotFoundException(Throwable throwable) {
+        super(throwable);
+    }
 }

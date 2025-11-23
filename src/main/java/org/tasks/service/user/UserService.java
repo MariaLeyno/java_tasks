@@ -1,16 +1,17 @@
 package org.tasks.service.user;
 
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+import org.tasks.DatabaseException;
 import org.tasks.UserAccess;
 import org.tasks.UserException;
+import org.tasks.database.UserRepository;
 import org.tasks.model.User;
+import org.tasks.model.UserField;
 import org.tasks.service.user.errors.*;
-import org.tasks.storage.StorageFactory;
-import org.tasks.storage.UserStorage;
 
-import java.io.IOException;
+import java.util.List;
 import java.util.Map;
-
-import static org.tasks.service.user.UserConstants.*;
 
 /**
  * UserService provides business logic for managing user's accounts. It validates data from UI and requests
@@ -20,10 +21,14 @@ import static org.tasks.service.user.UserConstants.*;
 public class UserService {
 
     /** Storage for user accounts */
-    private final UserStorage userStorage;
+    private final UserRepository userRepository;
 
-    public UserService() {
-        this.userStorage = StorageFactory.getUserStorage();
+    public UserService() throws UserServiceIsNotInstantiatedException {
+        try {
+            this.userRepository = new UserRepository();
+        } catch (DatabaseException ex) {
+            throw new UserServiceIsNotInstantiatedException(ex);
+        }
     }
 
     /**
@@ -33,9 +38,17 @@ public class UserService {
      * @throws UserException - if account parameters are invalid or account storing failed
      */
     public void registerNewUser(Map<String, String> userData) throws UserException {
-        String login = userData.get(LOGIN);
-        String password1 = userData.get(PASSWORD);
-        String password2 = userData.get(PASSWORD_AGAIN);
+        String login = null;
+        String password1 = null;
+        String password2 = null;
+        for (UserField field : UserField.values()) {
+            String value = userData.get(field.name());
+            switch (field) {
+                case LOGIN -> login = value;
+                case PASSWORD -> password1 = value;
+                case PASSWORD_AGAIN -> password2 = value;
+            }
+        }
 
         validateUserName(login);
         validatePassword(password1, password2);
@@ -56,8 +69,8 @@ public class UserService {
      * @throws UserException - if account is not found or password is invalid
      */
     public UserAccess authenticateUser(Map<String, String> userData) throws UserException {
-        String login = userData.get(LOGIN);
-        String password = userData.get(PASSWORD);
+        String login = userData.get(UserField.LOGIN.name());
+        String password = userData.get(UserField.PASSWORD.name());
 
         User user = findUserByLogin(login);
         if (user == null) {
@@ -89,7 +102,7 @@ public class UserService {
      * @throws PasswordNotValidException - if password is empty or twice entered passwords do not match
      */
     private void validatePassword(String password1, String password2) throws PasswordNotValidException {
-        if (password1 == null || password1.isEmpty()) {
+        if (password1 == null || password1.length() < 6) {
             throw new PasswordNotValidException();
         }
         if (!password1.equals(password2)) {
@@ -104,8 +117,8 @@ public class UserService {
      */
     private void saveUser(User user) throws UserNotSavedException {
         try {
-            userStorage.addNewDataObject(user);
-        } catch (IOException ex) {
+            userRepository.addNewUser(user);
+        } catch (DatabaseException ex) {
             throw new UserNotSavedException(ex);
         }
     }
@@ -115,7 +128,14 @@ public class UserService {
      * @param login user account name
      * @return user account
      */
-    private User findUserByLogin(String login) {
-        return userStorage.findDataObjectByPrimary(login);
+    private User findUserByLogin(String login) throws UserNotFoundException {
+        Multimap<String, String> loginFilter = TreeMultimap.create();
+        loginFilter.put(UserField.LOGIN.name(), login);
+        try {
+            List<User> found = userRepository.findUsersByParameters(loginFilter);
+            return found == null || found.isEmpty() ? null : found.get(0);
+        } catch (DatabaseException ex) {
+            throw new UserNotFoundException(ex);
+        }
     }
 }

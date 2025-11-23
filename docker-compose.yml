@@ -1,0 +1,7 @@
+services:
+  docker-postgres:
+    image: postgres:latest
+    env_file: postgresql.env
+    ports:
+      - "15432:5432"
+    restart: unless-stopped
