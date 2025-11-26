@@ -11,6 +11,7 @@ import org.tasks.ItemException;
 import org.tasks.service.stock.StockService;
 import org.tasks.service.stock.errors.ItemsNotFoundException;
 import org.tasks.service.stock.errors.StockServiceIsNotInstantiatedException;
+import org.tasks.web.annotations.Loggable;
 import org.tasks.web.dto.ItemDTO;
 import org.tasks.web.dto.MessageDTO;
 
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 @WebServlet(value = "/catalog")
+@Loggable
 public class CatalogServlet extends AbstractHttpServlet {
 
     private StockService stockService;
@@ -37,13 +39,13 @@ public class CatalogServlet extends AbstractHttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Multimap<String, String> filters = getFilters(req.getParameterMap());
-        int responseCode = 200;
+        int responseCode = HttpServletResponse.SC_OK;
 
         Object result;
         try {
             result = stockService.findItems(filters);
         } catch (ItemsNotFoundException ex) {
-            responseCode = 500;
+            responseCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
             result = new MessageDTO(ex.getMessage());
         }
 
@@ -58,12 +60,12 @@ public class CatalogServlet extends AbstractHttpServlet {
         try {
             ItemDTO itemDTO = objectMapper.readValue(req.getReader(), ItemDTO.class);
             stockService.addNewItem(itemDTO);
-            resp.setStatus(201);
+            resp.setStatus(HttpServletResponse.SC_CREATED);
         } catch (IOException ex) {
-            resp.setStatus(400);
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             message = new MessageDTO(ex.getMessage());
         } catch (ItemException ex) {
-            resp.setStatus(500);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             message = new MessageDTO(ex.getMessage());
         }
 
@@ -80,17 +82,17 @@ public class CatalogServlet extends AbstractHttpServlet {
         try {
             Set<String> itemIds = stockService.findItemIds(filters);
             if (itemIds.isEmpty()) {
-                resp.setStatus(204);
+                resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
             } else {
                 ItemDTO itemDTO = objectMapper.readValue(req.getReader(), ItemDTO.class);
                 stockService.updateItems(itemIds, itemDTO);
-                resp.setStatus(202);
+                resp.setStatus(HttpServletResponse.SC_ACCEPTED);
             }
         } catch (IOException ex) {
-            resp.setStatus(400);
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             message = new MessageDTO(ex.getMessage());
         } catch (ItemException ex) {
-            resp.setStatus(500);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             message = new MessageDTO(ex.getMessage());
         }
 
@@ -106,13 +108,13 @@ public class CatalogServlet extends AbstractHttpServlet {
         try {
             Set<String> itemIds = stockService.findItemIds(filters);
             if (itemIds.isEmpty()) {
-                resp.setStatus(204);
+                resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
             } else {
                 stockService.deleteItems(itemIds);
-                resp.setStatus(202);
+                resp.setStatus(HttpServletResponse.SC_ACCEPTED);
             }
         } catch (ItemException ex) {
-            resp.setStatus(500);
+            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             resp.setContentType(APPLICATION_JSON);
             resp.getOutputStream().write(objectMapper.writeValueAsBytes(new MessageDTO(ex.getMessage())));
         }

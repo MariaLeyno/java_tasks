@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 public class UserServiceTest {
 
     private static UserService userService;
+    private static final String hashedPassword = "$2a$10$7TaEjk7cpdbtqTPNmg/vpeRGzw3jUr37OpCZbriOhaXDJw3vpWzG6";
 
     @BeforeAll
     public static void init() throws UserServiceIsNotInstantiatedException {
@@ -37,7 +38,7 @@ public class UserServiceTest {
                              String login = ((Multimap<String, String>) invocation.getArgument(0))
                                      .get("LOGIN").iterator().next();
                              return switch (login) {
-                                 case "existing_user" -> List.of(new User("existing_user", "password", UserAccess.CHANGE));
+                                 case "existing_user" -> List.of(new User("existing_user", hashedPassword, UserAccess.CHANGE));
                                  case "unlucky_user" -> throw new DbManagerException(new RuntimeException());
                                  default -> Collections.emptyList();
                              };
@@ -63,7 +64,7 @@ public class UserServiceTest {
     @NullAndEmptySource
     @ValueSource(strings = { "11111" })
     public void testRegisterNewUser_invalidPassword(String password)  {
-        Map<String, String> userMap = getUserMap("login", password, password);
+        Map<String, String> userMap = getUserMap("login", "", password);
         PasswordNotValidException exception
                 = assertThrowsExactly(PasswordNotValidException.class, () -> userService.registerNewUser(userMap));
 
@@ -137,9 +138,9 @@ public class UserServiceTest {
     @DisplayName("10. Authentication succeed if login and password are correct")
     @Test
     public void testAuthenticateUser_authenticationSucceed() throws UserException {
-        Map<String, String> userMap = getUserMap("existing_user", "password", null);
-        UserAccess access = userService.authenticateUser(userMap);
-        assertEquals(UserAccess.CHANGE, access);
+        Map<String, String> userMap = getUserMap("existing_user", "cmVzdQ==", null);
+        String token = userService.authenticateUser(userMap);
+        assertNotNull(token);
     }
 
     private Map<String, String> getUserMap(String login, String password, String passwordAgain) {

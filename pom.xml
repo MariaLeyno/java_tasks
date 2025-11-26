@@ -25,6 +25,9 @@
         <jackson.version>2.20.1</jackson.version>
         <guava.version>33.5.0-jre</guava.version>
         <mindrot.version>0.4</mindrot.version>
+        <auth0.jwt.version>4.5.0</auth0.jwt.version>
+        <slf4j-api.version>2.0.17</slf4j-api.version>
+        <logback.version>1.5.21</logback.version>
         <junit-jupiter.version>6.0.1</junit-jupiter.version>
         <assertj-core.version>3.27.6</assertj-core.version>
         <mockito.version>5.20.0</mockito.version>
@@ -85,6 +88,21 @@
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
             <version>${mindrot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>${auth0.jwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j-api.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>${logback.version}</version>
         </dependency>
 
         <dependency>
@@ -187,6 +205,7 @@
                         <phase>process-classes</phase>
                         <goals>
                             <goal>compile</goal>
+                            <goal>test-compile</goal>
                         </goals>
                     </execution>
                 </executions>

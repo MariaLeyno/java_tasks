@@ -8,14 +8,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.tasks.UserException;
 import org.tasks.service.user.UserService;
 import org.tasks.service.user.errors.*;
+import org.tasks.web.annotations.Loggable;
 import org.tasks.web.dto.MessageDTO;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @WebServlet(value = "/user")
+@Loggable
 public class UserServlet extends AbstractHttpServlet {
 
     private UserService userService;
@@ -32,33 +33,19 @@ public class UserServlet extends AbstractHttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String body = req.getParameterMap().entrySet().stream()
-                .map(entry -> {
-                    StringBuilder str = new StringBuilder(entry.getKey() + ": [");
-                    for (String val : entry.getValue()) {
-                        str.append(val).append(", ");
-                    }
-                    str.append("]");
-                    return str.toString();
-                }).collect(Collectors.joining("\r\n"));
-        resp.getOutputStream().write(body.getBytes());
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Map<String, String> userData = getUserData(req.getParameterMap());
 
         String responseStr = "New user's registration is successful";
-        int responseCode = 201;
+        int responseCode = HttpServletResponse.SC_CREATED;
         try {
             userService.registerNewUser(userData);
         } catch (UserNameNotValidException | PasswordNotValidException | UserAlreadyExistsException ex) {
             responseStr = ex.getMessage();
-            responseCode = 400;
+            responseCode = HttpServletResponse.SC_BAD_REQUEST;
         } catch (UserException ex) {
             responseStr = ex.getMessage();
-            responseCode = 500;
+            responseCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
         }
 
         resp.setStatus(responseCode);
@@ -68,17 +55,18 @@ public class UserServlet extends AbstractHttpServlet {
     }
 
     @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
         Map<String, String> userData = getUserData(req.getParameterMap());
-        int responseCode = 202;
+        int responseCode = HttpServletResponse.SC_ACCEPTED;
         try {
-            userService.authenticateUser(userData);
+            String authToken = userService.authenticateUser(userData);
+            resp.addHeader("Auth token", authToken);
         } catch (UserNotFoundException ex) {
-            responseCode = 404;
+            responseCode = HttpServletResponse.SC_NOT_FOUND;
         } catch (AuthenticationFailedException ex) {
-            responseCode = 400;
+            responseCode = HttpServletResponse.SC_BAD_REQUEST;
         } catch (UserException ex) {
-            responseCode = 500;
+            responseCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
         }
         resp.setStatus(responseCode);
     }
