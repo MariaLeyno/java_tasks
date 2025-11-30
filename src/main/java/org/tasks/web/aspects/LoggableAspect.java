@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 public class LoggableAspect {
     private static final Logger logger = LoggerFactory.getLogger(LoggableAspect.class);
 
-    @Pointcut("within(@org.tasks.web.annotations.Loggable *) && execution(void * (jakarta.servlet.http.HttpServletRequest, jakarta.servlet.http.HttpServletResponse))")
+    @Pointcut("within(@org.tasks.web.annotations.Loggable *) && execution(* * (..))")
     public void annotateHttpMethodsByLoggable() {}
 
     @Around("annotateHttpMethodsByLoggable()")

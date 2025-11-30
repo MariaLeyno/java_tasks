@@ -5,13 +5,15 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import org.tasks.UserAccess;
+import org.springframework.stereotype.Service;
+import org.tasks.model.UserAccess;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.UUID;
 
+@Service
 public class TokenService {
     private static final String ISSUER = "token-service";
     private static final String AUDIENCE = "marketplace";

@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import org.tasks.UserAccess;
 
 /**
  * Data object to store parameters values and state for user account.

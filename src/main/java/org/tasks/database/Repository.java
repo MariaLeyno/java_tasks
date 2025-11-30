@@ -1,12 +1,15 @@
 package org.tasks.database;
 
 import com.google.common.collect.Multimap;
-import org.tasks.DatabaseException;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.tasks.errors.DatabaseException;
 import org.tasks.database.filtering.FieldWithValues;
 import org.tasks.database.filtering.NumberOperation;
 import org.tasks.database.utility.DbManager;
-import org.tasks.database.utility.DbManagerException;
-import org.tasks.database.utility.DbParameters;
+import org.tasks.errors.db.DbManagerException;
+import org.tasks.errors.db.QueryBuildingException;
 import org.tasks.model.DataObjectField;
 import org.tasks.model.FieldType;
 
@@ -23,7 +26,11 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
     private static final String DELETE = "delete from %s";
     private static final String WHERE = " where ";
 
-    private final DbManager dbManager;
+    private DbManager dbManager;
+
+    @Value("${spring.liquibase.default-schema}")
+    protected String schema;
+
     private final String table;
     private final String sequence;
     private final E primaryField;
@@ -35,11 +42,8 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
     private final String updateQuery;
     private final String deleteQuery;
 
-    Repository(String tableName, String sequenceName, E primaryField) throws DatabaseException {
-        this.dbManager = DbManager.getInstance();
-
-        String schema = DbParameters.DEFAULT_DB_SCHEMA.getValue();
-        if (schema == null || schema.isEmpty()) {
+    Repository(String tableName, String sequenceName, E primaryField) {
+        if (StringUtils.isEmpty(schema)) {
             this.table = tableName;
             this.sequence = sequenceName;
         } else {
@@ -63,6 +67,11 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
         this.insertQuery = String.format(INSERT, table, strFields, sequence, strQuestions);
         this.updateQuery = String.format(UPDATE, table);
         this.deleteQuery = String.format(DELETE, table);
+    }
+
+    @Autowired
+    public void setDbManager(DbManager dbManager) {
+        this.dbManager = dbManager;
     }
 
     protected int deleteDataObjects(Set<String> ids) throws DbManagerException {

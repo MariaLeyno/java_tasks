@@ -1,13 +1,15 @@
 package org.tasks.database;
 
 import com.google.common.collect.Multimap;
-import org.tasks.DatabaseException;
-import org.tasks.database.utility.DbManagerException;
+import org.springframework.stereotype.Component;
+import org.tasks.errors.DatabaseException;
+import org.tasks.errors.db.DbManagerException;
 import org.tasks.model.Item;
 import org.tasks.model.ItemField;
 
 import java.util.*;
 
+@Component
 public class ItemRepository extends Repository<ItemField> {
     private static final String ITEM_TABLE = "catalog_items";
     private static final String ITEM_SEQUENCE = "catalog_items_seq";

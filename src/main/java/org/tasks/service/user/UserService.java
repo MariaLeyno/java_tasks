@@ -2,24 +2,27 @@ package org.tasks.service.user;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
-import org.tasks.DatabaseException;
-import org.tasks.UserAccess;
-import org.tasks.UserException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.tasks.errors.DatabaseException;
+import org.tasks.model.UserAccess;
+import org.tasks.errors.UserException;
 import org.tasks.database.UserRepository;
+import org.tasks.errors.user.*;
 import org.tasks.model.User;
 import org.tasks.model.UserField;
 import org.tasks.service.security.CryptService;
 import org.tasks.service.security.TokenService;
-import org.tasks.service.user.errors.*;
+import org.tasks.web.dto.NewUserDTO;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * UserService provides business logic for managing user's accounts. It validates data from UI and requests
  * the internal storage to extract and manipulate accounts parameters and states. Then it returns results to UI.
  * In case of validation or internal errors the service throws {@link UserException}.
  */
+@Service
 public class UserService {
 
     /** Storage for user accounts */
@@ -29,43 +32,31 @@ public class UserService {
     /** Service to generate and validate authorization tokens */
     private final TokenService tokenService;
 
-    public UserService() throws UserServiceIsNotInstantiatedException {
-        try {
-            this.userRepository = new UserRepository();
-        } catch (DatabaseException ex) {
-            throw new UserServiceIsNotInstantiatedException(ex);
-        }
-        this.cryptService = new CryptService();
-        this.tokenService = new TokenService();
+    @Autowired
+    public UserService(UserRepository userRepository, CryptService cryptService, TokenService tokenService) {
+        this.userRepository = userRepository;
+        this.cryptService = cryptService;
+        this.tokenService = tokenService;
     }
 
     /**
      * Method validates parameters for a new user account and, if there is no errors, requests the internal storage
      * to store the new account.
-     * @param userData user account parameters
+     * @param userDTO user account parameters
      * @throws UserException - if account parameters are invalid or account storing failed
      */
-    public void registerNewUser(Map<String, String> userData) throws UserException {
-        String login = null;
-        String password1 = null;
-        String password2 = null;
-        for (UserField field : UserField.values()) {
-            String value = userData.get(field.name());
-            switch (field) {
-                case LOGIN -> login = value;
-                case PASSWORD -> password1 = value;
-                case PASSWORD_AGAIN -> password2 = value;
-            }
-        }
+    public void registerNewUser(NewUserDTO userDTO) throws UserException {
+        String login = userDTO.login();
+        String password = userDTO.password();
 
         validateUserName(login);
-        validatePassword(password1, password2);
+        validatePassword(password, userDTO.passwordAgain());
 
         if (findUserByLogin(login) != null) {
             throw new UserAlreadyExistsException(login);
         }
 
-        String hashedPassword = cryptService.getHashedPassword(password1);
+        String hashedPassword = cryptService.getHashedPassword(password);
 
         User newUser = new User(login, hashedPassword, UserAccess.CHANGE);
         saveUser(newUser);
@@ -73,15 +64,13 @@ public class UserService {
 
     /**
      * Method requests the internal storage to find an existing account by its parameters. If the account is found,
-     * method validates that the password matches and return the account rights to UI.
-     * @param userData user account parameters
-     * @return user account rights
+     * method validates that the password matches and return the authorization token.
+     * @param login user login
+     * @param password user password
+     * @return authentication token
      * @throws UserException - if account is not found or password is invalid
      */
-    public String authenticateUser(Map<String, String> userData) throws UserException {
-        String login = userData.get(UserField.LOGIN.name());
-        String password = userData.get(UserField.PASSWORD.name());
-
+    public String authenticateUser(String login, String password) throws UserException {
         User user = findUserByLogin(login);
         if (user == null) {
             throw new UserNotFoundException(login);
@@ -106,7 +95,7 @@ public class UserService {
     }
 
     /**
-     * Method validates the account password for a new account.
+     * Method validates the account password for a new user account.
      * @param password1 user account password
      * @param password2 user account password entered a second time
      * @throws PasswordNotValidException - if password is empty or twice entered passwords do not match
@@ -121,7 +110,7 @@ public class UserService {
     }
 
     /**
-     * Method requests the internal storage to store a new account.
+     * Method requests the internal storage to store a new user account.
      * @param user new account
      * @throws UserNotSavedException - if storing failed
      */
@@ -134,7 +123,7 @@ public class UserService {
     }
 
     /**
-     * Method requests the internal storage to find an existing account by its name.
+     * Method requests the internal storage to find an existing user account by its name.
      * @param login user account name
      * @return user account
      */

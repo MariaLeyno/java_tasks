@@ -3,18 +3,30 @@ package org.tasks.database;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import org.jspecify.annotations.NullMarked;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.support.ParameterDeclarations;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.tasks.DatabaseException;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.tasks.errors.DatabaseException;
 import org.tasks.database.utility.DbManager;
-import org.tasks.database.utility.DbManagerException;
-import org.tasks.database.utility.DbParameters;
+import org.tasks.errors.db.DbManagerException;
+import org.tasks.errors.db.QueryBuildingException;
 import org.tasks.model.DataObjectField;
 import org.tasks.model.User;
 import org.tasks.model.UserField;
@@ -29,29 +41,37 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-import static org.tasks.UserAccess.CHANGE;
-import static org.tasks.UserAccess.READ;
-import static org.tasks.model.UserField.*;
+import static org.mockito.Mockito.anyMap;
+import static org.mockito.Mockito.anySet;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.tasks.model.UserAccess.CHANGE;
+import static org.tasks.model.UserAccess.READ;
+import static org.tasks.model.UserField.ACCESS;
+import static org.tasks.model.UserField.LOGIN;
+import static org.tasks.model.UserField.PASSWORD;
 
+@SpringJUnitConfig
+@TestPropertySource(properties = {"spring.liquibase.default-schema=test"})
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class UserRepositoryTest {
 
-    private static UserRepository userRepository;
     private static DbManager mockDbManager;
 
+    private static UserRepository userRepository;
+
     private final String login = "user";
-    private final String password = "passwrod";
+    private final String password = "password";
 
     @BeforeAll
     public static void init() throws DatabaseException {
-        DbParameters.DEFAULT_DB_SCHEMA.setValue("test");
-
         mockDbManager = mock(DbManager.class);
-        try (MockedStatic<DbManager> mockedStatic = Mockito.mockStatic(DbManager.class)) {
-            mockedStatic.when(DbManager::getInstance).thenReturn(mockDbManager);
-            userRepository = new UserRepository();
-        }
+
+        userRepository = new UserRepository();
+        userRepository.setDbManager(mockDbManager);
+        ReflectionTestUtils.setField(userRepository, "schema", "test");
     }
 
     @BeforeEach
@@ -332,4 +352,7 @@ public class UserRepositoryTest {
             );
         }
     }
+
+    @Configuration
+    static class TestConfig {}
 }

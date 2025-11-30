@@ -1,25 +1,32 @@
 package org.tasks.service.stock;
 
 import com.google.common.collect.Multimap;
-import org.tasks.DatabaseException;
-import org.tasks.ItemException;
+import com.google.common.collect.TreeMultimap;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.tasks.errors.DatabaseException;
+import org.tasks.errors.ItemException;
 import org.tasks.database.ItemRepository;
+import org.tasks.errors.stock.ItemsNotDeletedException;
+import org.tasks.errors.stock.ItemsNotFoundException;
+import org.tasks.errors.stock.ItemsNotSavedException;
 import org.tasks.model.Item;
 import org.tasks.model.ItemField;
-import org.tasks.service.stock.errors.*;
+import org.tasks.web.dto.FilterDTO;
 import org.tasks.web.dto.ItemDTO;
-import org.tasks.web.dto.ItemMapper;
+import org.tasks.web.dto.UpdateItemDTO;
+import org.tasks.web.mappers.ItemMapper;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * StockStorage provides business logic for managing catalog items. It validates data from UI and requests
  * the internal storage to filter and manipulate items parameters and states. Then it returns results to UI.
  * In case of validation or internal errors the service throws {@link ItemException}
  */
+@Service
 public class StockService {
 
     /** String NULL constant is used to update an item field with null-value (if the field allows nulls). */
@@ -30,21 +37,19 @@ public class StockService {
     /** Service to map HTTP data transfer object and database entity */
     private final ItemMapper itemMapper;
 
-    public StockService() throws StockServiceIsNotInstantiatedException {
-        try {
-            this.itemRepository = new ItemRepository();
-        } catch (DatabaseException ex) {
-            throw new StockServiceIsNotInstantiatedException(ex);
-        }
+    @Autowired
+    public StockService(ItemRepository itemRepository) {
+        this.itemRepository = itemRepository;
         this.itemMapper = ItemMapper.INSTANCE;
     }
 
     /**
      * Method requests the internal storage to extract catalog items with the specified parameters.
-     * @param parameters items parameters to filter
+     * @param filters items parameters to filter
      * @return collection of catalog items
      */
-    public List<ItemDTO> findItems(Multimap<String, String> parameters) throws ItemsNotFoundException {
+    public List<ItemDTO> findItems(FilterDTO filters) throws ItemsNotFoundException {
+        Multimap<String, String> parameters = getParametersToFilter(filters);
         try {
             List<Item> items = itemRepository.findItemsByParameters(parameters);
             return itemMapper.fromEntitiesToDtoList(items);
@@ -55,10 +60,11 @@ public class StockService {
 
     /**
      * Method requests the internal storage to extract catalog items identifiers filtered with the specified parameters.
-     * @param parameters items parameters to filter
+     * @param filters items parameters to filter
      * @return collection of catalog items identifiers
      */
-    public Set<String> findItemIds(Multimap<String, String> parameters) throws ItemsNotFoundException {
+    public Set<String> findItemIds(FilterDTO filters) throws ItemsNotFoundException {
+        Multimap<String, String> parameters = getParametersToFilter(filters);
         try {
             return itemRepository.findItemIdsByParameters(parameters);
         } catch (DatabaseException ex) {
@@ -85,48 +91,23 @@ public class StockService {
      * with new parameters values. If parameter value is empty, method skips it.
      * If parameter value is '<null>', method sets null-value to the parameter (if the field allows nulls).
      * @param itemIds collection of items identifiers
-     * @param parameters collection of new parameters values
-     * @return count of updated catalog items
-     * @throws ItemsNotSavedException - if updating failed
-     */
-    public int updateItems(Set<String> itemIds, Map<String, String> parameters) throws ItemsNotSavedException {
-        Map<ItemField, String> parametersToUpdate = new TreeMap<>();
-        for (ItemField field : ItemField.values()) {
-            String value = parameters.get(field.name());
-            if (isEmpty(value)) {
-                continue;
-            }
-            if (field == ItemField.PRICE && STR_NULL.equals(value)) {
-                value = null;
-            }
-            parametersToUpdate.put(field, value);
-        }
-
-        return updateItemsInDatabase(itemIds, parametersToUpdate);
-    }
-
-    /**
-     * Method requests the internal storage to update catalog items with specified identifiers
-     * with new parameters values. If parameter value is empty, method skips it.
-     * If parameter value is '<null>', method sets null-value to the parameter (if the field allows nulls).
-     * @param itemIds collection of items identifiers
      * @param itemParameters new parameters values
      * @return count of updated catalog items
      * @throws ItemsNotSavedException - if updating failed
      */
-    public int updateItems(Set<String> itemIds, ItemDTO itemParameters) throws ItemsNotSavedException {
+    public int updateItems(Set<String> itemIds, UpdateItemDTO itemParameters) throws ItemsNotSavedException {
         Map<ItemField, String> parametersToUpdate = new TreeMap<>();
-        if (!isEmpty(itemParameters.getName())) {
-            parametersToUpdate.put(ItemField.NAME, itemParameters.getName());
+        if (!StringUtils.isEmpty(itemParameters.name())) {
+            parametersToUpdate.put(ItemField.NAME, itemParameters.name());
         }
-        if (!isEmpty(itemParameters.getCategory())) {
-            parametersToUpdate.put(ItemField.CATEGORY, itemParameters.getCategory());
+        if (!StringUtils.isEmpty(itemParameters.category())) {
+            parametersToUpdate.put(ItemField.CATEGORY, itemParameters.category());
         }
-        if (!isEmpty(itemParameters.getBrand())) {
-            parametersToUpdate.put(ItemField.BRAND, itemParameters.getBrand());
+        if (!StringUtils.isEmpty(itemParameters.brand())) {
+            parametersToUpdate.put(ItemField.BRAND, itemParameters.brand());
         }
-        String price = itemParameters.getPrice();
-        if (!isEmpty(price)) {
+        String price = itemParameters.price();
+        if (!StringUtils.isEmpty(price)) {
             if (STR_NULL.equals(price)) {
                 price = null;
             }
@@ -134,24 +115,6 @@ public class StockService {
         }
 
         return updateItemsInDatabase(itemIds, parametersToUpdate);
-    }
-
-    private int updateItemsInDatabase(Set<String> ids, Map<ItemField, String> parametersToUpdate) throws ItemsNotSavedException {
-        try {
-            return itemRepository.updateItems(ids, parametersToUpdate);
-        } catch (DatabaseException ex) {
-            throw new ItemsNotSavedException(ex);
-        }
-    }
-
-    /**
-     * Method creates a new catalog item with specified parameters values and stores it to the database.
-     * @param parameters collection of item parameters values
-     * @throws ItemException - if item parameters are invalid or storing failed
-     */
-    public void addNewItem(Map<String, String> parameters) throws ItemException {
-        Item newItem = getNewItem(parameters);
-        storeNewItemToDatabase(newItem);
     }
 
     /**
@@ -177,42 +140,39 @@ public class StockService {
         }
     }
 
-    /**
-     * Method validates parameters values and, if they are valid, creates a new catalog item data object.
-     * @param parameters collection of item's parameters
-     * @return catalog item data object
-     * @throws ItemParametersNotValidException - if parameters values are not valid
+    /** Method requests the internal storage to update catalog items with specified identifiers.
+     * @param ids collection of items identifiers
+     * @param parametersToUpdate new parameters values
+     * @return coutn of updated catalog items
+     * @throws ItemsNotSavedException - if updating failed
      */
-    private Item getNewItem(Map<String, String> parameters) throws ItemParametersNotValidException {
-        String name = null;
-        String category = null;
-        String brand = null;
-        Double price = null;
-        for (ItemField field : ItemField.values()) {
-            String value = parameters.get(field.name());
-            if (!isEmpty(value)) {
-                switch (field) {
-                    case NAME -> name = value;
-                    case CATEGORY -> category = value;
-                    case BRAND -> brand = value;
-                    case PRICE -> price = Double.valueOf(value);
-                }
-            }
+    private int updateItemsInDatabase(Set<String> ids, Map<ItemField, String> parametersToUpdate) throws ItemsNotSavedException {
+        try {
+            return itemRepository.updateItems(ids, parametersToUpdate);
+        } catch (DatabaseException ex) {
+            throw new ItemsNotSavedException(ex);
         }
-
-        if (isEmpty(name) || isEmpty(category) || isEmpty(brand)) {
-            throw new ItemParametersNotValidException();
-        }
-
-        return new Item(name, category, brand, price);
     }
 
     /**
-     * Method checks if the string value is null or empty
-     * @param value string value to check
-     * @return is string value null or empty
+     * Method maps items filters to parameters multimap.
+     * @param filters parameters and values to filter with
+     * @return parameters multimap
      */
-    private boolean isEmpty(String value) {
-        return value == null || value.isEmpty();
+    private Multimap<String, String> getParametersToFilter(FilterDTO filters) {
+        Multimap<String, String> multimap = TreeMultimap.create();
+        if (CollectionUtils.isNotEmpty(filters.name())) {
+            multimap.putAll(ItemField.NAME.name(), filters.name());
+        }
+        if (CollectionUtils.isNotEmpty(filters.category())) {
+            multimap.putAll(ItemField.CATEGORY.name(), filters.category());
+        }
+        if (CollectionUtils.isNotEmpty(filters.brand())) {
+            multimap.putAll(ItemField.BRAND.name(), filters.brand());
+        }
+        if (CollectionUtils.isNotEmpty(filters.price())) {
+            multimap.putAll(ItemField.PRICE.name(), filters.price());
+        }
+        return multimap;
     }
 }

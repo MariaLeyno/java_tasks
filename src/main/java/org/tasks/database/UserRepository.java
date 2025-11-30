@@ -1,14 +1,17 @@
 package org.tasks.database;
 
 import com.google.common.collect.Multimap;
-import org.tasks.DatabaseException;
-import org.tasks.UserAccess;
-import org.tasks.database.utility.DbManagerException;
+import org.springframework.stereotype.Component;
+import org.tasks.errors.DatabaseException;
+import org.tasks.model.UserAccess;
+import org.tasks.errors.db.DbManagerException;
+import org.tasks.errors.db.QueryBuildingException;
 import org.tasks.model.User;
 import org.tasks.model.UserField;
 
 import java.util.*;
 
+@Component
 public class UserRepository extends Repository<UserField> {
     private static final String USER_TABLE = "user_accounts";
     private static final String USER_SEQUENCE = "user_account_seq";

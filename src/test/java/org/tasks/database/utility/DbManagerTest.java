@@ -3,6 +3,8 @@ package org.tasks.database.utility;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.tasks.errors.db.DbManagerException;
 import org.tasks.model.ItemField;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -23,17 +25,16 @@ public class DbManagerTest {
     private Set<ItemField> fields = Set.of(ItemField.values());
 
     @BeforeAll
-    static void init() throws IllegalAccessException, DbManagerException {
+    static void init() {
         postgres.start();
-        DbParameters.DB_HOST.setValue(postgres.getHost());
-        DbParameters.DB_PORT.setValue(String.valueOf(postgres.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT)));
-        DbParameters.POSTGRES_DB.setValue(postgres.getDatabaseName());
-        DbParameters.POSTGRES_USER.setValue(postgres.getUsername());
-        DbParameters.POSTGRES_PASSWORD.setValue(postgres.getPassword());
-        DbParameters.LIQUIBASE_CHANGELOG_FILE.setValue("db/changelog/changelog.xml");
 
-        dbManager = DbManager.getInstance();
-        assertNotNull(dbManager);
+        PGSimpleDataSource dataSource = new PGSimpleDataSource();
+        dataSource.setURL(postgres.getJdbcUrl());
+        dataSource.setDatabaseName(postgres.getDatabaseName());
+        dataSource.setUser(postgres.getUsername());
+        dataSource.setPassword(postgres.getPassword());
+
+        dbManager = new DbManager(dataSource);
     }
 
     @DisplayName("01. ExecuteWithResult() should return a map with field values after selection by query with filters")

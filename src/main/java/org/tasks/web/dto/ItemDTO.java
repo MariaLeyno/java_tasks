@@ -1,23 +1,14 @@
 package org.tasks.web.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import java.util.Objects;
 
 /**
- * Data transfer object to send and receive parameters values and state of catalog item by HTTP.
+ * Data transfer object to send and receive by REST parameters values and state of catalog item.
  */
-@Getter
-@Setter
-public class ItemDTO {
-
-    /** Item unique identifier */
-    private Integer id;
-    /** Item name */
-    private String name;
-    /** Item category */
-    private String category;
-    /** Item brand */
-    private String brand;
-    /** Item price */
-    private String price;
+public record ItemDTO (Integer id, String name, String category, String brand, String price) {
+    public ItemDTO {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(category);
+        Objects.requireNonNull(brand);
+    }
 }
