@@ -4,20 +4,23 @@ import liquibase.integration.spring.SpringLiquibase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.annotation.PropertySources;
 
 import javax.sql.DataSource;
 
 @Configuration
+@PropertySources(value = @PropertySource(value = "classpath:application.yml", factory = YamlPropertySourceFactory.class))
 public class LiquibaseConfiguration {
 
-    //@Value("${spring.liquibase.change-log}")
-    private String changeLog = "classpath:db/changelog/changelog.xml";
+    @Value("${spring.liquibase.change-log}")
+    private String changeLog;
 
-    //@Value("${spring.liquibase.default-schema}")
-    private String defaultSchema = "marketplace";
+    @Value("${spring.liquibase.default-schema}")
+    private String defaultSchema;
 
-    //@Value("${spring.liquibase.liquibase-schema}")
-    private String liquibaseSchema = "utility";
+    @Value("${spring.liquibase.liquibase-schema}")
+    private String liquibaseSchema;
 
     @Bean
     public SpringLiquibase getLiquibase(DataSource dataSource) {

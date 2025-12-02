@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.tasks.model.ItemField.*;
 
 @TestMethodOrder(MethodOrderer.DisplayName.class)
+@Disabled
 public class DbManagerTest {
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest");
 

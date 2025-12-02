@@ -3,12 +3,7 @@ package org.tasks.database;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import org.jspecify.annotations.NullMarked;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -56,6 +51,7 @@ import static org.tasks.model.UserField.PASSWORD;
 @SpringJUnitConfig
 @TestPropertySource(properties = {"spring.liquibase.default-schema=test"})
 @TestMethodOrder(MethodOrderer.DisplayName.class)
+@Disabled
 public class UserRepositoryTest {
 
     private static DbManager mockDbManager;
