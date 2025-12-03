@@ -28,12 +28,12 @@ public class Market {
      */
     public void work() {
         Scanner scanner = new Scanner(System.in);
-        UserAccess userAccess = null;
+        String authToken = null;
 
         while(true) {
-            if (userAccess == null) {
+            if (authToken == null) {
                 UserAction userAction = showWelcomeScreen(scanner);
-                userAccess = showUserScreen(userAction, scanner);
+                authToken = showUserScreen(userAction, scanner);
             } else {
                 StockAction stockAction = showStockScreen(scanner);
                 if (stockAction == StockAction.SELECT) {
@@ -179,7 +179,7 @@ public class Market {
      * @param scanner is a stream reader that collects inputs from user console line by line
      * @return user account rights
      */
-    private UserAccess showUserScreen(UserAction userAction, Scanner scanner) {
+    private String showUserScreen(UserAction userAction, Scanner scanner) {
         Map<String, String> userParameters = switch (userAction) {
             case SIGN_UP -> {
                 SignUpScreen userScreen = new SignUpScreen(scanner);
@@ -216,7 +216,7 @@ public class Market {
      * @param userParameters is an account data
      * @return user account rights
      */
-    private UserAccess processUserData(UserAction userAction, Map<String, String> userParameters) {
+    private String processUserData(UserAction userAction, Map<String, String> userParameters) {
         try {
             UserService userService = new UserService();
             if (userAction == UserAction.SIGN_UP) {

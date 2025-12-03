@@ -8,6 +8,8 @@ import org.tasks.UserException;
 import org.tasks.database.UserRepository;
 import org.tasks.model.User;
 import org.tasks.model.UserField;
+import org.tasks.service.security.CryptService;
+import org.tasks.service.security.TokenService;
 import org.tasks.service.user.errors.*;
 
 import java.util.List;
@@ -22,6 +24,10 @@ public class UserService {
 
     /** Storage for user accounts */
     private final UserRepository userRepository;
+    /** Service to hash and check passwords */
+    private final CryptService cryptService;
+    /** Service to generate and validate authorization tokens */
+    private final TokenService tokenService;
 
     public UserService() throws UserServiceIsNotInstantiatedException {
         try {
@@ -29,6 +35,8 @@ public class UserService {
         } catch (DatabaseException ex) {
             throw new UserServiceIsNotInstantiatedException(ex);
         }
+        this.cryptService = new CryptService();
+        this.tokenService = new TokenService();
     }
 
     /**
@@ -57,7 +65,9 @@ public class UserService {
             throw new UserAlreadyExistsException(login);
         }
 
-        User newUser = new User(login, password1, UserAccess.CHANGE);
+        String hashedPassword = cryptService.getHashedPassword(password1);
+
+        User newUser = new User(login, hashedPassword, UserAccess.CHANGE);
         saveUser(newUser);
     }
 
@@ -68,7 +78,7 @@ public class UserService {
      * @return user account rights
      * @throws UserException - if account is not found or password is invalid
      */
-    public UserAccess authenticateUser(Map<String, String> userData) throws UserException {
+    public String authenticateUser(Map<String, String> userData) throws UserException {
         String login = userData.get(UserField.LOGIN.name());
         String password = userData.get(UserField.PASSWORD.name());
 
@@ -77,11 +87,11 @@ public class UserService {
             throw new UserNotFoundException(login);
         }
 
-        if (!user.getPassword().equals(password)) {
+        if (!cryptService.checkPassword(password, user.getPassword())) {
             throw new AuthenticationFailedException();
         }
 
-        return user.getAccess();
+        return tokenService.generateToken(user.getLogin(), user.getAccess());
     }
 
     /**
@@ -102,7 +112,7 @@ public class UserService {
      * @throws PasswordNotValidException - if password is empty or twice entered passwords do not match
      */
     private void validatePassword(String password1, String password2) throws PasswordNotValidException {
-        if (password1 == null || password1.length() < 6) {
+        if (password1 == null || password1.isEmpty()) {
             throw new PasswordNotValidException();
         }
         if (!password1.equals(password2)) {
