@@ -7,7 +7,11 @@ import org.tasks.errors.db.DbManagerException;
 import org.tasks.model.Item;
 import org.tasks.model.ItemField;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 @Component
 public class ItemRepository extends Repository<ItemField> {

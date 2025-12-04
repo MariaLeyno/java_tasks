@@ -13,11 +13,23 @@ import org.tasks.errors.db.QueryBuildingException;
 import org.tasks.model.DataObjectField;
 import org.tasks.model.FieldType;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.tasks.database.SqlConstants.*;
+import static org.tasks.database.SqlConstants.AND;
+import static org.tasks.database.SqlConstants.BRACKETS;
+import static org.tasks.database.SqlConstants.COMMA;
+import static org.tasks.database.SqlConstants.EQUAL;
+import static org.tasks.database.SqlConstants.QUESTION_MARK;
+import static org.tasks.database.SqlConstants.QUOTE;
 
 public abstract class Repository<E extends Enum<E> & DataObjectField> {
     private static final String SELECT = "select %s from %s";

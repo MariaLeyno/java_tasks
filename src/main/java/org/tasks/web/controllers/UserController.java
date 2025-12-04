@@ -1,12 +1,17 @@
 package org.tasks.web.controllers;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import org.tasks.errors.UserException;
-import org.tasks.errors.user.*;
+import org.tasks.errors.user.AuthenticationFailedException;
+import org.tasks.errors.user.PasswordNotValidException;
+import org.tasks.errors.user.UserAlreadyExistsException;
+import org.tasks.errors.user.UserNameNotValidException;
+import org.tasks.errors.user.UserNotFoundException;
 import org.tasks.service.user.UserService;
 import org.tasks.web.annotations.Loggable;
 import org.tasks.web.dto.MessageDTO;
@@ -27,7 +32,7 @@ public class UserController {
 
     @PostMapping(value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public MessageDTO registerNewUser(NewUserDTO userDTO) {
+    public MessageDTO registerNewUser(@Valid NewUserDTO userDTO) {
         try {
             userService.registerNewUser(userDTO);
         } catch (UserNameNotValidException | PasswordNotValidException | UserAlreadyExistsException ex) {

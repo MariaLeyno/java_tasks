@@ -2,10 +2,7 @@ package org.tasks.config;
 
 import liquibase.integration.spring.SpringLiquibase;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.context.annotation.PropertySources;
+import org.springframework.context.annotation.*;
 
 import javax.sql.DataSource;
 
@@ -23,6 +20,7 @@ public class LiquibaseConfiguration {
     private String liquibaseSchema;
 
     @Bean
+    @DependsOn("databaseInitializer")
     public SpringLiquibase getLiquibase(DataSource dataSource) {
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
@@ -30,5 +28,10 @@ public class LiquibaseConfiguration {
         liquibase.setDefaultSchema(defaultSchema);
         liquibase.setChangeLog(changeLog);
         return liquibase;
+    }
+
+    @Bean("databaseInitializer")
+    public DatabaseInitializer databaseInitializer(DataSource dataSource) {
+        return new DatabaseInitializer(dataSource, defaultSchema, liquibaseSchema);
     }
 }

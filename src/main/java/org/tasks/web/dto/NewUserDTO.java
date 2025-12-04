@@ -1,11 +1,5 @@
 package org.tasks.web.dto;
 
-import java.util.Objects;
+import jakarta.validation.constraints.NotNull;
 
-public record NewUserDTO(String login, String password, String passwordAgain) {
-    public NewUserDTO {
-        Objects.requireNonNull(login);
-        Objects.requireNonNull(password);
-        Objects.requireNonNull(passwordAgain);
-    }
-}
+public record NewUserDTO(@NotNull String login, @NotNull String password, @NotNull String passwordAgain) { }

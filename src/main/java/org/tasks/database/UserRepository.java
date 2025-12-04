@@ -9,7 +9,12 @@ import org.tasks.errors.db.QueryBuildingException;
 import org.tasks.model.User;
 import org.tasks.model.UserField;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 @Component
 public class UserRepository extends Repository<UserField> {

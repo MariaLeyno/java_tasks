@@ -19,7 +19,10 @@ import org.tasks.web.dto.ItemDTO;
 import org.tasks.web.dto.UpdateItemDTO;
 import org.tasks.web.mappers.ItemMapper;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * StockStorage provides business logic for managing catalog items. It validates data from UI and requests

@@ -1,6 +1,11 @@
 package org.tasks.database.utility;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -14,11 +19,15 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.tasks.model.ItemField.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.tasks.model.ItemField.BRAND;
+import static org.tasks.model.ItemField.CATEGORY;
+import static org.tasks.model.ItemField.ID;
+import static org.tasks.model.ItemField.NAME;
+import static org.tasks.model.ItemField.PRICE;
 
 @TestMethodOrder(MethodOrderer.DisplayName.class)
-@Disabled
 public class DbManagerTest {
     private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:latest");
 
@@ -27,6 +36,7 @@ public class DbManagerTest {
 
     @BeforeAll
     static void init() {
+        postgres.withInitScript("db/postgres_init.sql");
         postgres.start();
 
         PGSimpleDataSource dataSource = new PGSimpleDataSource();
