@@ -15,8 +15,10 @@
         <maven.compiler.target>17</maven.compiler.target>
         <maven.war.version>3.5.0</maven.war.version>
         <maven.compiler.version>3.13.0</maven.compiler.version>
-        <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
-        <spring.framework.version>7.0.1</spring.framework.version>
+        <spring.boot.version>3.2.0</spring.boot.version>
+        <springdoc.openapi.version>2.5.0</springdoc.openapi.version>
+        <!--jakarta.servlet.version>6.1.0</jakarta.servlet.version-->
+        <!--spring.framework.version>7.0.1</spring.framework.version-->
         <postgresql.version>42.7.8</postgresql.version>
         <liquibase.version>5.0.1</liquibase.version>
         <aspectj.version>1.9.7</aspectj.version>
@@ -28,7 +30,6 @@
         <guava.version>33.5.0-jre</guava.version>
         <mindrot.version>0.4</mindrot.version>
         <auth0.jwt.version>4.5.0</auth0.jwt.version>
-        <springdoc.openapi.version>3.0.0</springdoc.openapi.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
         <logback.version>1.5.21</logback.version>
         <junit-jupiter.version>6.0.1</junit-jupiter.version>
@@ -39,8 +40,31 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+    </parent>
+
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.openapi.version}</version>
+        </dependency>
+        <!--dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <version>${jakarta.servlet.version}</version>
@@ -70,7 +94,7 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-aop</artifactId>
             <version>${spring.framework.version}</version>
-        </dependency>
+        </dependency-->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -128,11 +152,6 @@
             <version>${auth0.jwt.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>${springdoc.openapi.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j-api.version}</version>
@@ -149,12 +168,12 @@
             <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
+        <!--dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
             <version>${spring.framework.version}</version>
             <scope>test</scope>
-        </dependency>
+        </dependency-->
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>

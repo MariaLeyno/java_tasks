@@ -1,6 +1,7 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:15432/market
+    schema: marketplace
     username: market_admin
     password: marketplace1579
     driver-class-name: org.postgresql.Driver
