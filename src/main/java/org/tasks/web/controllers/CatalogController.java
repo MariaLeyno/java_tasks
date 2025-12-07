@@ -1,5 +1,6 @@
 package org.tasks.web.controllers;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -12,8 +13,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tasks.errors.ItemException;
+import org.tasks.model.EventType;
 import org.tasks.service.stock.StockService;
 import org.tasks.errors.stock.ItemsNotFoundException;
+import org.tasks.web.annotations.Auditable;
 import org.tasks.web.annotations.Loggable;
 import org.tasks.web.dto.FilterDTO;
 import org.tasks.web.dto.ItemDTO;
@@ -35,7 +38,8 @@ public class CatalogController {
 
     @GetMapping(value = "/catalog", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public List<ItemDTO> getCatalogItems(FilterDTO filters) {
+    @Auditable(eventType = EventType.GET_ITEMS)
+    public List<ItemDTO> getCatalogItems(FilterDTO filters, HttpServletRequest request) {
         try {
             return stockService.findItems(filters);
         } catch (ItemsNotFoundException ex) {
@@ -45,7 +49,8 @@ public class CatalogController {
 
     @PostMapping(value = "/catalog", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public void addNewCatalogItem(@RequestBody ItemDTO itemDTO) {
+    @Auditable(eventType = EventType.CREATE_ITEMS)
+    public void addNewCatalogItem(@RequestBody ItemDTO itemDTO, HttpServletRequest request) {
         try {
             stockService.addNewItem(itemDTO);
         } catch (ItemException ex) {
@@ -55,7 +60,8 @@ public class CatalogController {
 
     @PutMapping(value = "/catalog", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void updateCatalogItems(FilterDTO filters, @RequestBody UpdateItemDTO updateParameters) {
+    @Auditable(eventType = EventType.UPDATE_ITEMS)
+    public void updateCatalogItems(FilterDTO filters, @RequestBody UpdateItemDTO updateParameters, HttpServletRequest request) {
         try {
             Set<String> itemIds = stockService.findItemIds(filters);
             if (!itemIds.isEmpty()) {
@@ -68,7 +74,8 @@ public class CatalogController {
 
     @DeleteMapping(value = "/catalog", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
-    public void deleteCatalogItems(FilterDTO filters) {
+    @Auditable(eventType = EventType.DELETE_ITEMS)
+    public void deleteCatalogItems(FilterDTO filters, HttpServletRequest request) {
         try {
             Set<String> itemIds = stockService.findItemIds(filters);
             if (!itemIds.isEmpty()) {

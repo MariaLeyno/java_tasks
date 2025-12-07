@@ -18,7 +18,7 @@ public class ItemRepository extends Repository<ItemField> {
     private static final String ITEM_TABLE = "catalog_items";
     private static final String ITEM_SEQUENCE = "catalog_items_seq";
 
-    public ItemRepository() throws DatabaseException {
+    public ItemRepository() {
         super(ITEM_TABLE, ITEM_SEQUENCE, ItemField.ID);
     }
 

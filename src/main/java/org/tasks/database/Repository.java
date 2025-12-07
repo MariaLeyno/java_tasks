@@ -33,7 +33,7 @@ import static org.tasks.database.SqlConstants.QUOTE;
 
 public abstract class Repository<E extends Enum<E> & DataObjectField> {
     private static final String SELECT = "select %s from %s";
-    private static final String INSERT = "insert into %s (%s) values (nextval('%s'), %s)";
+    private static final String INSERT = "insert into %s (%s) values (nextval('%s'), %s) returning id";
     private static final String UPDATE = "update %s set ";
     private static final String DELETE = "delete from %s";
     private static final String WHERE = " where ";
@@ -134,7 +134,7 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
         return parameters.entrySet().stream().map(entry -> {
             E field = entry.getKey();
             return switch (field.getType()) {
-                case STRING -> field.name() + EQUAL + QUOTE + entry.getValue() + QUOTE;
+                case STRING, DATE_TIME -> field.name() + EQUAL + QUOTE + entry.getValue() + QUOTE;
                 case NUMBER -> field.name() + EQUAL + entry.getValue();
                 default -> null;
             };

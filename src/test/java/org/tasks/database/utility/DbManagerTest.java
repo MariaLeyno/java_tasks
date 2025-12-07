@@ -101,7 +101,7 @@ public class DbManagerTest {
     @ParameterizedTest
     @CsvSource(value = {"Socks, Ostin, Red socks, 10.1", "Socks, Ostin, Green socks, null"}, nullValues = "null")
     public void testExecuteWithParameters(String category, String brand, String name, String price) throws DbManagerException {
-        String query = "insert into catalog_items (ID, CATEGORY, BRAND, NAME, PRICE) values (nextval('catalog_items_seq'), ?, ?, ?, ?)";
+        String query = "insert into catalog_items (ID, CATEGORY, BRAND, NAME, PRICE) values (nextval('catalog_items_seq'), ?, ?, ?, ?) returning id";
         Map<ItemField, String> parameters = new TreeMap<>();
         parameters.put(CATEGORY, category);
         parameters.put(BRAND, brand);
@@ -110,7 +110,7 @@ public class DbManagerTest {
 
         int result = dbManager.executeWithParameters(query, parameters);
 
-        assertEquals(1, result);
+        assertThat(result).isBetween(4, 5);
     }
 
     @DisplayName("06. ExecuteWithParameters() should throw an exception if null-value is inserted into a non-null column")

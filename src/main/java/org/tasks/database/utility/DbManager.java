@@ -11,7 +11,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +63,7 @@ public final class DbManager {
      * Methods injects string or number parameters into SQL query and executes it at the database.
      * @param query SQL query to execute
      * @param parameters map of data object fields and their values
-     * @return a number of affected rows
+     * @return the first field of the first row if it exists in result, -1 otherwise
      * @param <T> Data Object fields
      * @throws DbManagerException - if parameters injecting fails or connectivity or SQL errors occur
      */
@@ -86,9 +88,18 @@ public final class DbManager {
                             statement.setDouble(k++, Double.parseDouble(value));
                         }
                     }
+                    case DATE_TIME -> {
+                        if (value == null) {
+                            statement.setNull(k++, Types.TIMESTAMP_WITH_TIMEZONE);
+                        } else {
+                            statement.setTimestamp(k++, Timestamp.from(Instant.parse(value)));
+                        }
+                    }
                 }
             }
-            return statement.executeUpdate();
+            statement.executeQuery();
+            ResultSet resultSet = statement.getResultSet();
+            return resultSet.next() ? resultSet.getInt(1) : -1;
         } catch (SQLException | IllegalArgumentException ex) {
             throw new DbManagerException(ex);
         }

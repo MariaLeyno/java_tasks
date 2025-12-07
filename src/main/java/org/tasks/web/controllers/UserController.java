@@ -4,7 +4,11 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tasks.errors.UserException;
 import org.tasks.errors.user.AuthenticationFailedException;
@@ -12,7 +16,9 @@ import org.tasks.errors.user.PasswordNotValidException;
 import org.tasks.errors.user.UserAlreadyExistsException;
 import org.tasks.errors.user.UserNameNotValidException;
 import org.tasks.errors.user.UserNotFoundException;
+import org.tasks.model.EventType;
 import org.tasks.service.user.UserService;
+import org.tasks.web.annotations.Auditable;
 import org.tasks.web.annotations.Loggable;
 import org.tasks.web.dto.MessageDTO;
 import org.tasks.web.dto.NewUserDTO;
@@ -30,6 +36,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    @Auditable(eventType = EventType.SIGN_UP)
     @PostMapping(value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public MessageDTO registerNewUser(@Valid NewUserDTO userDTO) {
@@ -43,6 +50,7 @@ public class UserController {
         return new MessageDTO(REGISTRATION_SUCCESSFUL);
     }
 
+    @Auditable(eventType = EventType.SIGN_IN)
     @PutMapping(value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
     public TokenDTO authenticateUser(@RequestParam("login") String login,

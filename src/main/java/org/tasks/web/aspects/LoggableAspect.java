@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 public class LoggableAspect {
     private static final Logger logger = LoggerFactory.getLogger(LoggableAspect.class);
 
-    @Pointcut("within(@org.tasks.web.annotations.Loggable *) && execution(* * (..))")
+    @Pointcut("within(@org.tasks.web.annotations.Loggable *)")
     public void annotateHttpMethodsByLoggable() {}
 
     @Around("annotateHttpMethodsByLoggable()")

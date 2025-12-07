@@ -31,18 +31,21 @@ public class CatalogAuthorizationFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) servletResponse;
         if (authHeader == null || authHeader.isBlank()) {
             httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        } else if (!checkAuthHeader(authHeader, requiredAccess)) {
+        }
+
+        String login = checkAuthHeaderAndGetLogin(authHeader, requiredAccess);
+        if (login == null) {
             httpServletResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
         } else {
-            filterChain.doFilter(servletRequest, servletResponse);
+            filterChain.doFilter(new LoginHeaderRequestWrapper(httpServletRequest, login), servletResponse);
         }
     }
 
-    private boolean checkAuthHeader(String authHeader, UserAccess requiredAccess) {
-        if (!authHeader.startsWith(BEARER)) {
-            return false;
+    private String checkAuthHeaderAndGetLogin(String authHeader, UserAccess requiredAccess) {
+        if (authHeader == null || !authHeader.startsWith(BEARER)) {
+            return null;
         }
         String token = authHeader.substring(BEARER.length());
-        return tokenService.validateToken(token, requiredAccess);
+        return tokenService.validateTokenAndGetSubject(token, requiredAccess);
     }
 }

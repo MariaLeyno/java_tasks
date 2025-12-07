@@ -86,7 +86,7 @@ public class UserRepositoryTest {
 
         String query = queryCapture.getValue();
         Map<DataObjectField, String> parameters = parametersCapture.getValue();
-        assertEquals("insert into user_accounts (ID, LOGIN, PASSWORD, ACCESS) values (nextval('user_account_seq'), ?, ?, ?)", query);
+        assertEquals("insert into user_accounts (ID, LOGIN, PASSWORD, ACCESS) values (nextval('user_account_seq'), ?, ?, ?) returning id", query);
         assertThat(parameters).containsEntry(LOGIN, login);
         assertThat(parameters).containsEntry(PASSWORD, password);
         assertThat(parameters).containsEntry(ACCESS, CHANGE.name());

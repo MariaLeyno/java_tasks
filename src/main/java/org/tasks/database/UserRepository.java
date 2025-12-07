@@ -28,7 +28,7 @@ public class UserRepository extends Repository<UserField> {
         }
     }
 
-    public UserRepository() throws DatabaseException {
+    public UserRepository() {
         super(USER_TABLE, USER_SEQUENCE, UserField.LOGIN);
     }
 
