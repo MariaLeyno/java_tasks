@@ -3,18 +3,26 @@ package org.tasks.database;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import org.jspecify.annotations.NullMarked;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.*;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.ArgumentsProvider;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.support.ParameterDeclarations;
 import org.mockito.ArgumentCaptor;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.tasks.DatabaseException;
+import org.tasks.errors.DatabaseException;
 import org.tasks.database.utility.DbManager;
-import org.tasks.database.utility.DbManagerException;
-import org.tasks.database.utility.DbParameters;
+import org.tasks.errors.db.DbManagerException;
+import org.tasks.errors.db.QueryBuildingException;
 import org.tasks.model.DataObjectField;
 import org.tasks.model.User;
 import org.tasks.model.UserField;
@@ -29,29 +37,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-import static org.tasks.UserAccess.CHANGE;
-import static org.tasks.UserAccess.READ;
-import static org.tasks.model.UserField.*;
+import static org.mockito.Mockito.anyMap;
+import static org.mockito.Mockito.anySet;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+import static org.tasks.model.UserAccess.CHANGE;
+import static org.tasks.model.UserAccess.READ;
+import static org.tasks.model.UserField.ACCESS;
+import static org.tasks.model.UserField.LOGIN;
+import static org.tasks.model.UserField.PASSWORD;
 
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class UserRepositoryTest {
 
-    private static UserRepository userRepository;
     private static DbManager mockDbManager;
 
+    private static UserRepository userRepository;
+
     private final String login = "user";
-    private final String password = "passwrod";
+    private final String password = "password";
 
     @BeforeAll
     public static void init() throws DatabaseException {
-        DbParameters.DEFAULT_DB_SCHEMA.setValue("test");
-
         mockDbManager = mock(DbManager.class);
-        try (MockedStatic<DbManager> mockedStatic = Mockito.mockStatic(DbManager.class)) {
-            mockedStatic.when(DbManager::getInstance).thenReturn(mockDbManager);
-            userRepository = new UserRepository();
-        }
+
+        userRepository = new UserRepository();
+        userRepository.setDbManager(mockDbManager);
     }
 
     @BeforeEach
@@ -73,7 +86,7 @@ public class UserRepositoryTest {
 
         String query = queryCapture.getValue();
         Map<DataObjectField, String> parameters = parametersCapture.getValue();
-        assertEquals("insert into test.user_accounts (ID, LOGIN, PASSWORD, ACCESS) values (nextval('test.user_account_seq'), ?, ?, ?)", query);
+        assertEquals("insert into user_accounts (ID, LOGIN, PASSWORD, ACCESS) values (nextval('user_account_seq'), ?, ?, ?) returning id", query);
         assertThat(parameters).containsEntry(LOGIN, login);
         assertThat(parameters).containsEntry(PASSWORD, password);
         assertThat(parameters).containsEntry(ACCESS, CHANGE.name());
@@ -111,7 +124,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithCount(queryCapture.capture());
 
         String query = queryCapture.getValue();
-        assertEquals("update test.user_accounts set ACCESS='READ' where (LOGIN='user1' OR LOGIN='user2')", query);
+        assertEquals("update user_accounts set ACCESS='READ' where (LOGIN='user1' OR LOGIN='user2')", query);
     }
 
     @DisplayName("05. User data to update should not be null or not applicable")
@@ -138,7 +151,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithCount(queryCapture.capture());
 
         String query = queryCapture.getValue();
-        assertEquals("update test.user_accounts set ACCESS='READ'", query);
+        assertEquals("update user_accounts set ACCESS='READ'", query);
     }
 
     @DisplayName("07. Users can not be updated in case of database error")
@@ -162,7 +175,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithCount(queryCapture.capture());
 
         String query = queryCapture.getValue();
-        assertEquals("delete from test.user_accounts where (LOGIN='user1' OR LOGIN='user2')", query);
+        assertEquals("delete from user_accounts where (LOGIN='user1' OR LOGIN='user2')", query);
     }
 
     @DisplayName("09. Users may be deleted without filters")
@@ -178,7 +191,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithCount(queryCapture.capture());
 
         String query = queryCapture.getValue();
-        assertEquals("delete from test.user_accounts", query);
+        assertEquals("delete from user_accounts", query);
     }
 
     @DisplayName("10. Users can not be deleted in case of database error")
@@ -214,7 +227,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithResult(queryCapture.capture(), anySet());
 
         String query = queryCapture.getValue();
-        assertEquals("select ID, LOGIN, PASSWORD, ACCESS from test.user_accounts where (ACCESS='READ')", query);
+        assertEquals("select ID, LOGIN, PASSWORD, ACCESS from user_accounts where (ACCESS='READ')", query);
     }
 
     @DisplayName("12. Users can be found with no field filters specified")
@@ -242,7 +255,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithResult(queryCapture.capture(), anySet());
 
         String query = queryCapture.getValue();
-        assertEquals("select ID, LOGIN, PASSWORD, ACCESS from test.user_accounts", query);
+        assertEquals("select ID, LOGIN, PASSWORD, ACCESS from user_accounts", query);
     }
 
     @DisplayName("13. Users can be not found")
@@ -260,7 +273,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithResult(queryCapture.capture(), anySet());
 
         String query = queryCapture.getValue();
-        assertEquals("select ID, LOGIN, PASSWORD, ACCESS from test.user_accounts where (ACCESS='READ')", query);
+        assertEquals("select ID, LOGIN, PASSWORD, ACCESS from user_accounts where (ACCESS='READ')", query);
     }
 
     @DisplayName("14. User logins can be found with field filters")
@@ -281,7 +294,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithResult(queryCapture.capture(), anySet());
 
         String query = queryCapture.getValue();
-        assertEquals("select LOGIN from test.user_accounts where (ACCESS='READ')", query);
+        assertEquals("select LOGIN from user_accounts where (ACCESS='READ')", query);
     }
 
     @DisplayName("15. User logins can be found with no field filters specified")
@@ -302,7 +315,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithResult(queryCapture.capture(), anySet());
 
         String query = queryCapture.getValue();
-        assertEquals("select LOGIN from test.user_accounts", query);
+        assertEquals("select LOGIN from user_accounts", query);
     }
 
     @DisplayName("16. User logins can be not found")
@@ -320,7 +333,7 @@ public class UserRepositoryTest {
         verify(mockDbManager).executeWithResult(queryCapture.capture(), anySet());
 
         String query = queryCapture.getValue();
-        assertEquals("select LOGIN from test.user_accounts where (ACCESS='READ')", query);
+        assertEquals("select LOGIN from user_accounts where (ACCESS='READ')", query);
     }
 
     static class MultimapArgumentProvider implements ArgumentsProvider {

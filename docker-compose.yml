@@ -1,7 +1,10 @@
 services:
   docker-postgres:
     image: postgres:latest
-    env_file: postgresql.env
+    environment:
+      POSTGRES_DB: market
+      POSTGRES_USER: market_admin
+      POSTGRES_PASSWORD: marketplace1579
     ports:
       - "15432:5432"
     restart: unless-stopped

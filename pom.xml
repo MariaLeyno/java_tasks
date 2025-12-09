@@ -13,8 +13,10 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <maven.war.version>3.5.0</maven.war.version>
         <maven.compiler.version>3.13.0</maven.compiler.version>
         <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
+        <spring.framework.version>7.0.1</spring.framework.version>
         <postgresql.version>42.7.8</postgresql.version>
         <liquibase.version>5.0.1</liquibase.version>
         <aspectj.version>1.9.7</aspectj.version>
@@ -22,16 +24,18 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok.version>1.18.42</lombok.version>
         <commons-io.version>2.20.0</commons-io.version>
-        <jackson.version>2.20.1</jackson.version>
+        <jackson.version>3.0.3</jackson.version>
         <guava.version>33.5.0-jre</guava.version>
         <mindrot.version>0.4</mindrot.version>
         <auth0.jwt.version>4.5.0</auth0.jwt.version>
+        <springdoc.openapi.version>3.0.0</springdoc.openapi.version>
         <slf4j-api.version>2.0.17</slf4j-api.version>
         <logback.version>1.5.21</logback.version>
         <junit-jupiter.version>6.0.1</junit-jupiter.version>
         <assertj-core.version>3.27.6</assertj-core.version>
         <mockito.version>5.20.0</mockito.version>
         <testcontainers.postgresql>1.21.3</testcontainers.postgresql>
+        <jayway.jsonpath.version>2.10.0</jayway.jsonpath.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -41,6 +45,31 @@
             <artifactId>jakarta.servlet-api</artifactId>
             <version>${jakarta.servlet.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <version>${spring.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
+            <version>${spring.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>${spring.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
+            <version>${spring.framework.version}</version>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -54,7 +83,12 @@
         </dependency>
         <dependency>
             <groupId>org.aspectj</groupId>
-            <artifactId>aspectjrt</artifactId>
+            <artifactId>aspectjtools</artifactId>
+            <version>${aspectj.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
             <version>${aspectj.version}</version>
         </dependency>
         <dependency>
@@ -74,7 +108,7 @@
             <version>${commons-io.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
+            <groupId>tools.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
@@ -94,6 +128,11 @@
             <version>${auth0.jwt.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.openapi.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j-api.version}</version>
@@ -108,6 +147,12 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${spring.framework.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -134,31 +179,21 @@
             <version>${testcontainers.postgresql}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>${jayway.jsonpath.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <finalName>Marketplace</finalName>
         <plugins>
             <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <mainClass>org.tasks.ConsoleApp</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <phase>package</phase>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>${maven.war.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -180,33 +215,6 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>aspectj-maven-plugin</artifactId>
-                <version>${aspectj.plugin.version}</version>
-                <configuration>
-                    <complianceLevel>16</complianceLevel>
-                    <source>16</source>
-                    <target>16</target>
-                    <showWeaveInfo>true</showWeaveInfo>
-                    <verbose>true</verbose>
-                    <Xlint>ignore</Xlint>
-                    <encoding>UTF-8</encoding>
-                    <forceAjcCompile>true</forceAjcCompile>
-                    <sources/>
-                    <weaveDirectories>
-                        <weaveDirectory>${project.build.directory}/classes</weaveDirectory>
-                    </weaveDirectories>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

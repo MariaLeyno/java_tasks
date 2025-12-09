@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:15432/market
+    username: market_admin
+    password: marketplace1579
+    driver-class-name: org.postgresql.Driver
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/changelog.xml
+    default-schema: marketplace
+    liquibase-schema: utility

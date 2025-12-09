@@ -5,13 +5,15 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
-import org.tasks.UserAccess;
+import org.springframework.stereotype.Service;
+import org.tasks.model.UserAccess;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.UUID;
 
+@Service
 public class TokenService {
     private static final String ISSUER = "token-service";
     private static final String AUDIENCE = "marketplace";
@@ -35,31 +37,32 @@ public class TokenService {
                 .sign(algorithm);
     }
 
-    public boolean validateToken(String token, UserAccess requiredAccess) {
+    public String validateTokenAndGetSubject(String token, UserAccess requiredAccess) {
         Algorithm algorithm = Algorithm.HMAC256(SECRET);
         JWTVerifier verifier = JWT.require(algorithm).build();
 
+        String subject = null;
         try {
             DecodedJWT decodedJWT = verifier.verify(token);
             if (!ISSUER.equals(decodedJWT.getIssuer())) {
-                return false;
+                return null;
             }
             if (!decodedJWT.getAudience().contains(AUDIENCE)) {
-                return false;
+                return null;
             }
-            String subject = decodedJWT.getSubject();
+            subject = decodedJWT.getSubject();
             if (subject == null || subject.isEmpty()) {
-                return false;
+                return null;
             }
             UserAccess access = decodedJWT.getClaim(ACCESS_CLAIM).as(UserAccess.class);
             if (access.compareTo(requiredAccess) < 0) {
-                return false;
+                return null;
             }
         } catch (JWTVerificationException ex) {
-            return false;
+            return null;
         }
 
-        return true;
+        return subject;
     }
 
     private static String getSecret() {

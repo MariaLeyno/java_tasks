@@ -1,8 +1,15 @@
 package org.tasks.database.utility;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.postgresql.ds.PGSimpleDataSource;
+import org.tasks.errors.db.DbManagerException;
 import org.tasks.model.ItemField;
 import org.testcontainers.containers.PostgreSQLContainer;
 
@@ -12,8 +19,13 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.tasks.model.ItemField.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.tasks.model.ItemField.BRAND;
+import static org.tasks.model.ItemField.CATEGORY;
+import static org.tasks.model.ItemField.ID;
+import static org.tasks.model.ItemField.NAME;
+import static org.tasks.model.ItemField.PRICE;
 
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class DbManagerTest {
@@ -23,17 +35,17 @@ public class DbManagerTest {
     private Set<ItemField> fields = Set.of(ItemField.values());
 
     @BeforeAll
-    static void init() throws IllegalAccessException, DbManagerException {
+    static void init() {
+        postgres.withInitScript("db/postgres_init.sql");
         postgres.start();
-        DbParameters.DB_HOST.setValue(postgres.getHost());
-        DbParameters.DB_PORT.setValue(String.valueOf(postgres.getMappedPort(PostgreSQLContainer.POSTGRESQL_PORT)));
-        DbParameters.POSTGRES_DB.setValue(postgres.getDatabaseName());
-        DbParameters.POSTGRES_USER.setValue(postgres.getUsername());
-        DbParameters.POSTGRES_PASSWORD.setValue(postgres.getPassword());
-        DbParameters.LIQUIBASE_CHANGELOG_FILE.setValue("db/changelog/changelog.xml");
 
-        dbManager = DbManager.getInstance();
-        assertNotNull(dbManager);
+        PGSimpleDataSource dataSource = new PGSimpleDataSource();
+        dataSource.setURL(postgres.getJdbcUrl());
+        dataSource.setDatabaseName(postgres.getDatabaseName());
+        dataSource.setUser(postgres.getUsername());
+        dataSource.setPassword(postgres.getPassword());
+
+        dbManager = new DbManager(dataSource);
     }
 
     @DisplayName("01. ExecuteWithResult() should return a map with field values after selection by query with filters")
@@ -89,7 +101,7 @@ public class DbManagerTest {
     @ParameterizedTest
     @CsvSource(value = {"Socks, Ostin, Red socks, 10.1", "Socks, Ostin, Green socks, null"}, nullValues = "null")
     public void testExecuteWithParameters(String category, String brand, String name, String price) throws DbManagerException {
-        String query = "insert into catalog_items (ID, CATEGORY, BRAND, NAME, PRICE) values (nextval('catalog_items_seq'), ?, ?, ?, ?)";
+        String query = "insert into catalog_items (ID, CATEGORY, BRAND, NAME, PRICE) values (nextval('catalog_items_seq'), ?, ?, ?, ?) returning id";
         Map<ItemField, String> parameters = new TreeMap<>();
         parameters.put(CATEGORY, category);
         parameters.put(BRAND, brand);
@@ -98,7 +110,7 @@ public class DbManagerTest {
 
         int result = dbManager.executeWithParameters(query, parameters);
 
-        assertEquals(1, result);
+        assertThat(result).isBetween(4, 5);
     }
 
     @DisplayName("06. ExecuteWithParameters() should throw an exception if null-value is inserted into a non-null column")

@@ -1,29 +1,48 @@
 package org.tasks.database;
 
 import com.google.common.collect.Multimap;
-import org.tasks.DatabaseException;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.tasks.errors.DatabaseException;
 import org.tasks.database.filtering.FieldWithValues;
 import org.tasks.database.filtering.NumberOperation;
 import org.tasks.database.utility.DbManager;
-import org.tasks.database.utility.DbManagerException;
-import org.tasks.database.utility.DbParameters;
+import org.tasks.errors.db.DbManagerException;
+import org.tasks.errors.db.QueryBuildingException;
 import org.tasks.model.DataObjectField;
 import org.tasks.model.FieldType;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.tasks.database.SqlConstants.*;
+import static org.tasks.database.SqlConstants.AND;
+import static org.tasks.database.SqlConstants.BRACKETS;
+import static org.tasks.database.SqlConstants.COMMA;
+import static org.tasks.database.SqlConstants.EQUAL;
+import static org.tasks.database.SqlConstants.QUESTION_MARK;
+import static org.tasks.database.SqlConstants.QUOTE;
 
 public abstract class Repository<E extends Enum<E> & DataObjectField> {
     private static final String SELECT = "select %s from %s";
-    private static final String INSERT = "insert into %s (%s) values (nextval('%s'), %s)";
+    private static final String INSERT = "insert into %s (%s) values (nextval('%s'), %s) returning id";
     private static final String UPDATE = "update %s set ";
     private static final String DELETE = "delete from %s";
     private static final String WHERE = " where ";
 
-    private final DbManager dbManager;
+    private DbManager dbManager;
+
+    @Value("${spring.liquibase.default-schema}")
+    protected String schema;
+
     private final String table;
     private final String sequence;
     private final E primaryField;
@@ -35,11 +54,8 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
     private final String updateQuery;
     private final String deleteQuery;
 
-    Repository(String tableName, String sequenceName, E primaryField) throws DatabaseException {
-        this.dbManager = DbManager.getInstance();
-
-        String schema = DbParameters.DEFAULT_DB_SCHEMA.getValue();
-        if (schema == null || schema.isEmpty()) {
+    Repository(String tableName, String sequenceName, E primaryField) {
+        if (StringUtils.isEmpty(schema)) {
             this.table = tableName;
             this.sequence = sequenceName;
         } else {
@@ -63,6 +79,11 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
         this.insertQuery = String.format(INSERT, table, strFields, sequence, strQuestions);
         this.updateQuery = String.format(UPDATE, table);
         this.deleteQuery = String.format(DELETE, table);
+    }
+
+    @Autowired
+    public void setDbManager(DbManager dbManager) {
+        this.dbManager = dbManager;
     }
 
     protected int deleteDataObjects(Set<String> ids) throws DbManagerException {
@@ -113,7 +134,7 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
         return parameters.entrySet().stream().map(entry -> {
             E field = entry.getKey();
             return switch (field.getType()) {
-                case STRING -> field.name() + EQUAL + QUOTE + entry.getValue() + QUOTE;
+                case STRING, DATE_TIME -> field.name() + EQUAL + QUOTE + entry.getValue() + QUOTE;
                 case NUMBER -> field.name() + EQUAL + entry.getValue();
                 default -> null;
             };
