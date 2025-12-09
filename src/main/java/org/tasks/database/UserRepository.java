@@ -1,6 +1,7 @@
 package org.tasks.database;
 
 import com.google.common.collect.Multimap;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tasks.errors.DatabaseException;
 import org.tasks.model.UserAccess;
@@ -28,8 +29,8 @@ public class UserRepository extends Repository<UserField> {
         }
     }
 
-    public UserRepository() {
-        super(USER_TABLE, USER_SEQUENCE, UserField.LOGIN);
+    public UserRepository(@Value("${spring.datasource.schema}") String schema) {
+        super(schema, USER_TABLE, USER_SEQUENCE, UserField.LOGIN);
     }
 
     public int deleteUsers(Set<String> logins) throws DbManagerException {

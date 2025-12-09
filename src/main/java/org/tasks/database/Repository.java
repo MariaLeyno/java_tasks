@@ -40,9 +40,6 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
 
     private DbManager dbManager;
 
-    @Value("${spring.liquibase.default-schema}")
-    protected String schema;
-
     private final String table;
     private final String sequence;
     private final E primaryField;
@@ -54,7 +51,7 @@ public abstract class Repository<E extends Enum<E> & DataObjectField> {
     private final String updateQuery;
     private final String deleteQuery;
 
-    Repository(String tableName, String sequenceName, E primaryField) {
+    Repository(String schema, String tableName, String sequenceName, E primaryField) {
         if (StringUtils.isEmpty(schema)) {
             this.table = tableName;
             this.sequence = sequenceName;

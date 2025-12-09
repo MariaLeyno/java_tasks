@@ -1,5 +1,6 @@
 package org.tasks.database;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tasks.errors.DatabaseException;
 import org.tasks.model.AuditEvent;
@@ -14,8 +15,8 @@ public class AuditEventRepository extends Repository<AuditEventField> {
     private static final String EVENT_TABLE = "audit_events";
     private static final String EVENT_SEQUENCE = "audit_events_seq";
 
-    AuditEventRepository() {
-        super(EVENT_TABLE, EVENT_SEQUENCE, AuditEventField.ID);
+    AuditEventRepository(@Value("${spring.datasource.schema}") String schema) {
+        super(schema, EVENT_TABLE, EVENT_SEQUENCE, AuditEventField.ID);
     }
 
     public int updateEvent(int id, Map<AuditEventField, String> parameters) throws DatabaseException {

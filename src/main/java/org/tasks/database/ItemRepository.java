@@ -1,6 +1,7 @@
 package org.tasks.database;
 
 import com.google.common.collect.Multimap;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.tasks.errors.DatabaseException;
 import org.tasks.errors.db.DbManagerException;
@@ -18,8 +19,8 @@ public class ItemRepository extends Repository<ItemField> {
     private static final String ITEM_TABLE = "catalog_items";
     private static final String ITEM_SEQUENCE = "catalog_items_seq";
 
-    public ItemRepository() {
-        super(ITEM_TABLE, ITEM_SEQUENCE, ItemField.ID);
+    public ItemRepository(@Value("${spring.datasource.schema}") String schema) {
+        super(schema, ITEM_TABLE, ITEM_SEQUENCE, ItemField.ID);
     }
 
     public int deleteItems(Set<String> itemIds) throws DbManagerException {

@@ -1,5 +1,8 @@
 package org.tasks.web.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,6 +31,8 @@ import java.util.Set;
 
 @RestController
 @Loggable
+@SecurityRequirement(name = "Bearer Authentication")
+@Tag(name = "catalog", description = "REST API to manage catalog items, an authentication token is required")
 public class CatalogController {
 
     private final StockService stockService;
@@ -37,6 +42,7 @@ public class CatalogController {
         this.stockService = stockService;
     }
 
+    @Operation(summary = "Get catalog items, using filters by name, category, brand, price or without them", tags = "catalog")
     @GetMapping(value = "/catalog", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     @Auditable(eventType = EventType.GET_ITEMS)
@@ -48,6 +54,7 @@ public class CatalogController {
         }
     }
 
+    @Operation(summary = "Add a new catalog item", tags = "catalog")
     @PostMapping(value = "/catalog", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @Auditable(eventType = EventType.CREATE_ITEMS)
@@ -59,6 +66,7 @@ public class CatalogController {
         }
     }
 
+    @Operation(summary = "Update catalog items, filtering them by their parameters and specifying new parameters values", tags = "catalog")
     @PutMapping(value = "/catalog", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Auditable(eventType = EventType.UPDATE_ITEMS)
@@ -73,6 +81,7 @@ public class CatalogController {
         }
     }
 
+    @Operation(summary = "Delete catalog items, filtering them by their parameters", tags = "catalog")
     @DeleteMapping(value = "/catalog", consumes = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Auditable(eventType = EventType.DELETE_ITEMS)

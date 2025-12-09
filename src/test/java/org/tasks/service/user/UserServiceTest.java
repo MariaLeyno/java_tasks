@@ -1,7 +1,6 @@
 package org.tasks.service.user;
 
 import com.google.common.collect.Multimap;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -11,6 +10,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.tasks.errors.DatabaseException;
 import org.tasks.model.UserAccess;
 import org.tasks.errors.UserException;
@@ -37,24 +39,26 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@SpringBootTest
 @TestMethodOrder(MethodOrderer.DisplayName.class)
 public class UserServiceTest {
     private static final String hashedPassword = "$2a$10$7TaEjk7cpdbtqTPNmg/vpeRGzw3jUr37OpCZbriOhaXDJw3vpWzG6";
 
-    private static UserRepository userRepository;
-    private static CryptService cryptService;
-    private static TokenService tokenService;
+    @MockBean
+    private UserRepository userRepository;
+    @MockBean
+    private CryptService cryptService;
+    @MockBean
+    private TokenService tokenService;
 
-    private static UserService userService;
+    @Autowired
+    private UserService userService;
 
-    @BeforeAll
-    public static void init() throws DatabaseException {
-        userRepository = mock(UserRepository.class);
-        cryptService = mock(CryptService.class);
-        tokenService = mock(TokenService.class);
+    @BeforeEach
+    public void resetMocks() throws DatabaseException {
+        Mockito.reset(cryptService, tokenService, userRepository);
 
         when(userRepository.findUsersByParameters(any(Multimap.class))).thenAnswer(invocation -> {
             String login = ((Multimap<String, String>) invocation.getArgument(0))
@@ -65,12 +69,6 @@ public class UserServiceTest {
                 default -> Collections.emptyList();
             };
         });
-        userService = new UserService(userRepository, cryptService, tokenService);
-    }
-
-    @BeforeEach
-    public void resetMocks() {
-        Mockito.reset(cryptService, tokenService);
     }
 
     @DisplayName("01. User name should not be empty or too short")

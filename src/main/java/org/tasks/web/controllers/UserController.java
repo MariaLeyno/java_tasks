@@ -1,5 +1,7 @@
 package org.tasks.web.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -26,6 +28,7 @@ import org.tasks.web.dto.TokenDTO;
 
 @RestController
 @Loggable
+@Tag(name = "user", description = "REST API for registering a new user and signing in and getting an authorization token.")
 public class UserController {
     private static final String REGISTRATION_SUCCESSFUL = "New user's registration is successful";
 
@@ -36,6 +39,7 @@ public class UserController {
         this.userService = userService;
     }
 
+    @Operation(summary = "Register a new user", tags = "user")
     @Auditable(eventType = EventType.SIGN_UP)
     @PostMapping(value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
@@ -50,6 +54,7 @@ public class UserController {
         return new MessageDTO(REGISTRATION_SUCCESSFUL);
     }
 
+    @Operation(summary = "Log in the application ad get token", tags = "user")
     @Auditable(eventType = EventType.SIGN_IN)
     @PutMapping(value = "/user", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.ACCEPTED)
