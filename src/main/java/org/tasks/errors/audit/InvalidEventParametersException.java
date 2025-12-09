@@ -1,8 +1,8 @@
 package org.tasks.errors.audit;
 
-import org.tasks.errors.AuditEventException;
+import org.tasks.starter.audit.AuditException;
 
-public class InvalidEventParametersException extends AuditEventException {
+public class InvalidEventParametersException extends AuditException {
     public InvalidEventParametersException(Throwable throwable) {
         super(throwable);
     }

@@ -15,7 +15,7 @@ In shop catalog users may:
 3. Update existing items.
 4. Delete existing items.
 
-Application functionality is available with console commands and through HTTP endpoints:
+Application functionality is available through HTTP endpoints:
 - Endpoints for user accounts management:
   - url: /Marketplace/user
     - POST method is used to create a new user account: 'login', 'password' and 'password_again' query parameters are required.
@@ -28,5 +28,4 @@ Application functionality is available with console commands and through HTTP en
 
 All entity objects are stored at PostreSQL database. Table indexes provide fast access to entities. Liquibase manages data migration and table structure at the database.
 
-Known issues:
-1. The system just has expansion points for showing audit and other system information. 
+All REST requests are logged to a file and stored as events with parameters to the PostgreSQL database for auditing.

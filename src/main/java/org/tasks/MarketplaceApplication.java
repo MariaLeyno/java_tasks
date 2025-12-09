@@ -5,9 +5,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.tasks.starter.config.EnableEventAudit;
 
 @SpringBootApplication
 @EnableWebMvc
+@EnableEventAudit
 public class MarketplaceApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) {

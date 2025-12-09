@@ -13,11 +13,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 import org.tasks.errors.ItemException;
-import org.tasks.model.EventType;
+
 import org.tasks.service.stock.StockService;
 import org.tasks.errors.stock.ItemsNotFoundException;
-import org.tasks.web.annotations.Auditable;
-import org.tasks.web.annotations.Loggable;
+import org.tasks.starter.annotations.Auditable;
+import org.tasks.starter.annotations.Loggable;
+import org.tasks.starter.audit.EventType;
 import org.tasks.web.dto.FilterDTO;
 import org.tasks.web.dto.ItemDTO;
 import org.tasks.web.dto.UpdateItemDTO;

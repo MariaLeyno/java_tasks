@@ -6,22 +6,23 @@ import org.aspectj.lang.JoinPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.tasks.database.AuditEventRepository;
-import org.tasks.errors.AuditEventException;
 import org.tasks.errors.DatabaseException;
 import org.tasks.errors.audit.AuditEventNotFoundException;
 import org.tasks.errors.audit.AuditEventNotSavedException;
 import org.tasks.errors.audit.InvalidEventParametersException;
 import org.tasks.model.AuditEvent;
 import org.tasks.model.AuditEventField;
-import org.tasks.model.EventResult;
-import org.tasks.model.EventType;
+import org.tasks.starter.audit.AuditException;
+import org.tasks.starter.audit.AuditService;
+import org.tasks.starter.audit.EventResult;
+import org.tasks.starter.audit.EventType;
 
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class AuditEventService {
+public class AuditEventService implements AuditService {
     private static final Map<JoinPoint, Integer> EVENT_IDS = new HashMap<>();
 
     /** Storage for audit events */
@@ -35,7 +36,7 @@ public class AuditEventService {
         this.objectMapper = new ObjectMapper();
     }
 
-    public void updateEvent(EventResult eventResult, JoinPoint joinPoint) throws AuditEventException {
+    public void updateEvent(EventResult eventResult, JoinPoint joinPoint) throws AuditException {
         Integer eventId = EVENT_IDS.get(joinPoint);
         if (eventId == null) {
             throw new AuditEventNotFoundException("Event Id can not be found");
@@ -55,7 +56,7 @@ public class AuditEventService {
     }
 
     public void addNewEvent(EventType type, String userLogin, Map<String, Object> parameters, JoinPoint joinPoint)
-            throws AuditEventException {
+            throws AuditException {
         try {
             String strParameters = objectMapper.writeValueAsString(parameters);
             AuditEvent auditEvent = new AuditEvent(type, userLogin, Instant.now(), strParameters);
