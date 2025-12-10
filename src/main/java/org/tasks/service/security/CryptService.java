@@ -1,11 +1,13 @@
 package org.tasks.service.security;
 
 import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.stereotype.Service;
 
 /**
  * CryptService calculates a password hash to store it at the database and validates if a password
  * entered by an authorizing user is compliant with the stored hash.
  */
+@Service
 public class CryptService {
 
     /**

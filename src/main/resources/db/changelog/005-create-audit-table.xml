@@ -1,0 +1,30 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.5.xsd"
+        logicalFilePath="db/changelog.xml">
+    <changeSet id="005-create-audit-table" author="leynom">
+        <createSequence sequenceName="audit_events_seq" startValue="1" incrementBy="1"/>
+        <createTable tableName="audit_events">
+            <column type="BIGINT" name="id">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="type">
+                <constraints nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="author"/>
+            <column type="TIMESTAMP WITH TIME ZONE" name="start_time">
+                <constraints nullable="false"/>
+            </column>
+            <column type="TIMESTAMP WITH TIME ZONE" name="end_time"/>
+            <column type="VARCHAR(255)" name="parameters">
+                <constraints nullable="false"/>
+            </column>
+            <column type="VARCHAR(255)" name="result"/>
+        </createTable>
+        <createIndex tableName="audit_events" indexName="audit_events_time">
+            <column name="start_time"/>
+            <column name="end_time"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

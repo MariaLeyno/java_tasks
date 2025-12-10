@@ -12,7 +12,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static org.tasks.database.SqlConstants.*;
+import static org.tasks.database.SqlConstants.EQUAL;
+import static org.tasks.database.SqlConstants.OR;
+import static org.tasks.database.SqlConstants.QUOTE;
 
 public class FieldWithValues<T extends Enum<T> & DataObjectField> implements Comparable<FieldWithValues<T>> {
     @Getter

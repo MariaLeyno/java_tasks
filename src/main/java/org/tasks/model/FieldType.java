@@ -4,7 +4,8 @@ import lombok.Getter;
 
 public enum FieldType {
     STRING(null),
-    NUMBER("^(EQ|NE|LT|GT)\\s?(\\d+(\\.\\d+)?)$");
+    NUMBER("^(EQ|NE|LT|GT)\\s?(\\d+(\\.\\d+)?)$"),
+    DATE_TIME(null);
 
     @Getter
     private final String filterPattern;

@@ -1,6 +1,11 @@
 package org.tasks.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * Data object to store parameters values and state for catalog item in database.

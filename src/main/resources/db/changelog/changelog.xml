@@ -7,4 +7,5 @@
     <include file="002-insert-user-accounts.xml" relativeToChangelogFile="true"/>
     <include file="003-insert-catalog-items.xml" relativeToChangelogFile="true"/>
     <include file="004-update-users-with-hashed-passwords.xml" relativeToChangelogFile="true"/>
+    <include file="005-create-audit-table.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>
